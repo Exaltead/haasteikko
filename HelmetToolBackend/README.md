@@ -1,1 +1,0 @@
-func azure functionapp publish helmet-tool

@@ -1,8 +1,0 @@
-dotnet publish -c Release -r linux-x64
-cd bin/Release/net8.0/linux-x64
-zip -r app.zip .
-cd ../../../..
-mv bin/Release/net8.0/linux-x64/app.zip ./app.zip
-az storage blob upload -c backend -f app.zip -n app.zip --overwrite --account-key=SET_TO_SA_ACCOUNT_KEY --account-name SET_TO_STORAGE_ACCOUNT_NAME
-az resource invoke-action --resource-group SET_TO_RESOURCE_GROUP --action syncfunctiontriggers --name SET_TO_FUNCTION_APP_NAME --resource-type Microsoft.Web/sites
-rm app.zip
