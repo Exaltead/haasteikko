@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    types: [opened]
 
 env:
   AZURE_FUNCTIONAPP_NAME: "haasteikkostg-flex-api-hsvowedtubwye"
   AZURE_FUNCTIONAPP_PACKAGE_PATH: "./backend/deployment"
   AZURE_STORAGE_ACCOUNT_NAME: "haasteikkostghshsvowedt"
+  AZURE_EXTERNAL_TENANT_ID: "598750cd-d651-40f0-a8ba-dc7d2409b558"
+  AZURE_EXTERNAL_CLIENT_ID: "7026c030-9feb-4589-b17f-cc27c5cacb6d"
   API_URL: "https://haasteikkostg-flex-api-hsvowedtubwye.azurewebsites.net/api"
 
 jobs:

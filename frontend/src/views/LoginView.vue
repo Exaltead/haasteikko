@@ -4,7 +4,8 @@ import Button from '@/components/basics/BrandedButton.vue';
 import { postLogin } from '@/api/authApi';
 import { saveTokens } from '@/modules/auth-store';
 import { useRouter } from 'vue-router';
-import { authInstance, getAccessToken, redirectLogin } from '@/auth/auth';
+import { getAccessToken, redirectLogin } from '@/auth/auth';
+
 
 const router = useRouter()
 

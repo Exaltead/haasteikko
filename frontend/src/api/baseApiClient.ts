@@ -43,7 +43,7 @@ export abstract class BaseApiClient<
     const validated = this.newSchema.parse(newEntity)
     const resp = await fetch(this.baseUrl, {
       method: "POST",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
       body: JSON.stringify(validated),
     })
 
@@ -58,7 +58,7 @@ export abstract class BaseApiClient<
   protected async deleteEntity(id: string): Promise<void> {
     const resp = await fetch(`${this.baseUrl}/${id}`, {
       method: "DELETE",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
     })
 
     if (!resp.ok) {
@@ -69,7 +69,7 @@ export abstract class BaseApiClient<
   protected async fetchEntities(queryParams: URLSearchParams): Promise<z.infer<T>[]> {
     const resp = await fetch(this.baseUrl + "?" + queryParams, {
       method: "GET",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
     })
 
     if (!resp.ok) {
@@ -82,7 +82,7 @@ export abstract class BaseApiClient<
   protected async fetchEntity(id: string): Promise<z.infer<T> | undefined>{
     const resp = await fetch(`${this.baseUrl}/${id}`, {
       method: "GET",
-      headers: this.getHeaders()
+      headers: await this.getHeaders()
     })
 
     if(!resp.ok){
