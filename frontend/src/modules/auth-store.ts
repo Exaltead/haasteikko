@@ -17,6 +17,7 @@ export function clearTokens(): void {
 }
 
 export function isLoggedIn(): boolean {
+
   const accessToken = getAccessToken()
   if (!accessToken) {
     return false

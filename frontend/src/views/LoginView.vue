@@ -4,6 +4,7 @@ import Button from '@/components/basics/BrandedButton.vue';
 import { postLogin } from '@/api/authApi';
 import { saveTokens } from '@/modules/auth-store';
 import { useRouter } from 'vue-router';
+import { authInstance, getAccessToken, redirectLogin } from '@/auth/auth';
 
 const router = useRouter()
 
@@ -36,6 +37,22 @@ const loginText = computed(() => {
   return loggingIn.value ? "Kirjaudutaan sisään..." : "Kirjaudu sisään"
 })
 
+
+async function routeOnUserLoggedIn() {
+
+  const accessToken = await getAccessToken({ routeOnLoginFail: true })
+
+  if (accessToken) {
+    console.log(accessToken)
+    router.push({ name: "login" })
+  }
+  else {
+    setTimeout(routeOnUserLoggedIn, 1000)
+  }
+}
+
+
+routeOnUserLoggedIn()
 </script>
 
 <template>
@@ -45,6 +62,7 @@ const loginText = computed(() => {
         class="flex flex-col justify-center w-fit border border-brand-primary bg-light-gray rounded-lg shadow-lg p-10 pt-4 gap-10">
 
         <p class="mx-auto text-lg  font-bold">Kirjaudu sisään Haasteikkoon</p>
+        <Button :onClick="redirectLogin"></Button>
         <div class="flex flex-col gap-10 max-w-md mx-auto">
 
           <div class="flex flex-col gap-2">

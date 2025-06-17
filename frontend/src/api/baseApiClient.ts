@@ -1,4 +1,5 @@
-import { getAccessToken } from "@/modules/auth-store"
+
+import { getAccessToken } from "@/auth/auth"
 import { z } from "zod"
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -16,10 +17,12 @@ export abstract class BaseApiClient<
     this.baseUrl = `${API_URL}/${urlSuffix}`
   }
 
-  private getHeaders(): HeadersInit {
+  private async getHeaders(): Promise<HeadersInit> {
+    const accessToken = await getAccessToken()
+    console.log(accessToken)
     return {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getAccessToken()}`,
+      Authorization: `Bearer ${accessToken}`,
     }
   }
 
@@ -27,7 +30,7 @@ export abstract class BaseApiClient<
     const validated = this.schema.parse(entity)
     const resp = await fetch(`${this.baseUrl}/${id}`, {
       method: "PUT",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
       body: JSON.stringify(validated),
     })
 

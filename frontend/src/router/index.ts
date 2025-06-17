@@ -6,6 +6,7 @@ import { isLoggedIn } from "@/modules/auth-store"
 import ChallengeManagementView from "@/views/ChallengeManagementView.vue"
 import ChallengeSolutionView from "@/views/ChallengeSolutionView.vue"
 import OverallChallengesView from "@/views/OverallChallengesView.vue"
+import RedirectPage from "@/views/RedirectPage.vue"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,10 +41,20 @@ const router = createRouter({
       name: "challengeSolution",
       component: ChallengeSolutionView,
     },
+    {
+      path: "/auth/callback",
+      name: "authCallback",
+      component: RedirectPage
+    }
   ],
 })
 
+/*
 router.beforeEach((to) => {
+  if(to.name === "authCallback"){
+    return undefined
+  }
+
   const isAuthenticated = isLoggedIn()
 
   if (to.name !== "login" && !isAuthenticated) {
@@ -52,6 +63,6 @@ router.beforeEach((to) => {
   if (to.name === "login" && isAuthenticated) {
     return { name: "home" }
   }
-})
+})*/
 
 export default router
