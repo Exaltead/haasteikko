@@ -4,6 +4,7 @@ import { tr } from "zod/v4/locales"
 const clientId = import.meta.env.VITE_CLIENT_ID
 const tenantId = import.meta.env.VITE_TENANT_ID
 const API_URL = import.meta.env.VITE_API_URL
+const APP_CIAM_NAME = import.meta.env.VITE_APP_CIAM_NAME
 
 
 
@@ -20,7 +21,9 @@ export async function getAuthInstance(): Promise<IPublicClientApplication> {
         redirectUri: `http://localhost:5173/auth/callback`,
         navigateToLoginRequestUrl: false
 
-      }
+      },
+      telemetry: undefined
+
     })
   }
 
