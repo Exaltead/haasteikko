@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { getChallengeAnswers } from '@/api/answerApi';
-import { fetchChallenges } from '@/api/challengeApi';
+import { answerApiClient } from '@/api/answerApiClient';
+import { challengeApiClient } from '@/api/challengeApiClient';
 import { libraryApi } from '@/api/libraryApiClient';
 
 import { solutionsApiClient } from '@/api/solutionsApiClient';
@@ -81,7 +81,7 @@ async function loadData() {
 
   // Loads questions in the challenges
   const loadChallenges = async () => {
-    const challenges = await fetchChallenges()
+    const challenges = await challengeApiClient.fetchChallenges()
     const challenge = challenges.find(t => t.id === challengeId)
     if (challenge === undefined) {
       throw new Error("Challenge not found")
@@ -92,7 +92,7 @@ async function loadData() {
 
   // Loads answers
   const loadAnswers = async () => {
-    const answers = await getChallengeAnswers(challengeId)
+    const answers = await answerApiClient.getChallengeAnswers(challengeId)
     allAnswers.value = answers.filter(t => {
       return t.answered === true
     })

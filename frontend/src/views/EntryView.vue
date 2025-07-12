@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { fetchChallenges } from '@/api/challengeApi';
+import { challengeApiClient } from '@/api/challengeApiClient';
 import { libraryApi } from '@/api/libraryApiClient';;
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
 import EntryChallenge from '@/components/Entry/EntryChallenge.vue';
@@ -23,7 +23,7 @@ const challenges = ref<Challenge[]>([])
 const item = ref<LibraryItem | undefined>(undefined)
 
 async function getChallenges() {
-  challenges.value = await fetchChallenges()
+  challenges.value = await challengeApiClient.fetchChallenges()
 }
 async function getItem() {
   const itemId = z.string().parse(route.params.id)

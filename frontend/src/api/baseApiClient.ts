@@ -19,7 +19,6 @@ export abstract class BaseApiClient<
 
   private async getHeaders(): Promise<HeadersInit> {
     const accessToken = await getAccessToken()
-    console.log(accessToken)
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
@@ -79,13 +78,13 @@ export abstract class BaseApiClient<
     return this.schema.array().parse(data)
   }
 
-  protected async fetchEntity(id: string): Promise<z.infer<T> | undefined>{
+  protected async fetchEntity(id: string): Promise<z.infer<T> | undefined> {
     const resp = await fetch(`${this.baseUrl}/${id}`, {
       method: "GET",
       headers: await this.getHeaders()
     })
 
-    if(!resp.ok){
+    if (!resp.ok) {
       return undefined
     }
 

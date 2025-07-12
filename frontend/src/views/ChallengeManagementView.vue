@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { fetchChallenges } from '@/api/challengeApi';
+import { challengeApiClient } from '@/api/challengeApiClient';
 import EditChallenge from '@/components/ChallengeManagement/EditChallenge.vue';
 import ManageChallenges from '@/components/ChallengeManagement/ManageChallenges.vue';
 import type { Challenge } from '@/models/challenge';
@@ -9,7 +9,7 @@ import { ref } from 'vue';
 const data = ref<Challenge[]>([]);
 
 async function getChallenges(): Promise<void> {
-  data.value = await fetchChallenges()
+  data.value = await challengeApiClient.fetchChallenges()
   console.log("Fetched challenges", data.value)
 }
 

@@ -63,8 +63,8 @@ routeOnUserLoggedIn()
         class="flex flex-col justify-center w-fit border border-brand-primary bg-light-gray rounded-lg shadow-lg p-10 pt-4 gap-10">
 
         <p class="mx-auto text-lg  font-bold">Kirjaudu sisään Haasteikkoon</p>
-        <Button :onClick="redirectLogin"></Button>
-        <div class="flex flex-col gap-10 max-w-md mx-auto">
+        <Button :onClick="redirectLogin" :text="'Kirjaudu sisään (uusi)'"></Button>
+        <!--<div class="flex flex-col gap-10 max-w-md mx-auto">
 
           <div class="flex flex-col gap-2">
             <label for="username"> Käyttäjätunnus</label>
@@ -84,7 +84,7 @@ routeOnUserLoggedIn()
             class="border border-brand-primary rounded">
             Kirjaudu sisään
           </Button>
-        </div>
+        </div>-->
       </div>
 
     </div>

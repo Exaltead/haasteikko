@@ -6,7 +6,7 @@ import { v4 } from 'uuid';
 import IconPlus from "@/components/icons/IconPlus.vue"
 import IconBack from '@/components/icons/IconBack.vue';
 import BrandedButton from '../basics/BrandedButton.vue';
-import { addChallenge, updateChallenge } from '@/api/challengeApi';
+import { challengeApiClient } from '@/api/challengeApiClient';
 import ChallengeQuestionCard from './ChallengeQuestionCard.vue';
 const { target } = defineProps<{ target: Challenge | undefined }>()
 
@@ -81,10 +81,10 @@ async function submit() {
 
   isSubmitting.value = true
   if (toSend.id === "") {
-    await addChallenge(toSend)
+    await challengeApiClient.addChallenge(toSend)
   }
   else {
-    await updateChallenge(toSend)
+    await challengeApiClient.updateChallenge(toSend)
   }
 
   isSubmitting.value = false

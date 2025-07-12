@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { fetchChallenges } from '@/api/challengeApi';
+import { challengeApiClient } from '@/api/challengeApiClient';
 import { solutionsApiClient } from '@/api/solutionsApiClient';
 import type { Challenge, SolutionSet } from '@/models/challenge';
 import { computed, ref } from 'vue';
@@ -12,7 +12,7 @@ type ChallengeAndSolution = {
 
 const challengeAndSolutions = ref<ChallengeAndSolution[]>([])
 async function getChallengesAndSolutions() {
-  const challenges = await fetchChallenges()
+  const challenges = await challengeApiClient.fetchChallenges()
   const solutions = await solutionsApiClient.fetchSolutionSets()
 
   challengeAndSolutions.value = challenges.map(challenge => {
