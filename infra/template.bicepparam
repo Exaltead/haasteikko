@@ -1,4 +1,5 @@
 using './main.bicep'
 
 param appName = 'SETME'
-param clientSecret = 'SETME'
+param authClientSecret = 'SETME'
+param authClientId = 'SETME'
