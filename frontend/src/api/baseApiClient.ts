@@ -1,4 +1,5 @@
-import { getAccessToken } from "@/modules/auth-store"
+
+import { getAccessToken } from "@/auth/auth"
 import { z } from "zod"
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -16,10 +17,11 @@ export abstract class BaseApiClient<
     this.baseUrl = `${API_URL}/${urlSuffix}`
   }
 
-  private getHeaders(): HeadersInit {
+  private async getHeaders(): Promise<HeadersInit> {
+    const accessToken = await getAccessToken()
     return {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getAccessToken()}`,
+      Authorization: `Bearer ${accessToken}`,
     }
   }
 
@@ -27,7 +29,7 @@ export abstract class BaseApiClient<
     const validated = this.schema.parse(entity)
     const resp = await fetch(`${this.baseUrl}/${id}`, {
       method: "PUT",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
       body: JSON.stringify(validated),
     })
 
@@ -40,7 +42,7 @@ export abstract class BaseApiClient<
     const validated = this.newSchema.parse(newEntity)
     const resp = await fetch(this.baseUrl, {
       method: "POST",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
       body: JSON.stringify(validated),
     })
 
@@ -55,7 +57,7 @@ export abstract class BaseApiClient<
   protected async deleteEntity(id: string): Promise<void> {
     const resp = await fetch(`${this.baseUrl}/${id}`, {
       method: "DELETE",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
     })
 
     if (!resp.ok) {
@@ -66,7 +68,7 @@ export abstract class BaseApiClient<
   protected async fetchEntities(queryParams: URLSearchParams): Promise<z.infer<T>[]> {
     const resp = await fetch(this.baseUrl + "?" + queryParams, {
       method: "GET",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
     })
 
     if (!resp.ok) {
@@ -76,13 +78,13 @@ export abstract class BaseApiClient<
     return this.schema.array().parse(data)
   }
 
-  protected async fetchEntity(id: string): Promise<z.infer<T> | undefined>{
+  protected async fetchEntity(id: string): Promise<z.infer<T> | undefined> {
     const resp = await fetch(`${this.baseUrl}/${id}`, {
       method: "GET",
-      headers: this.getHeaders()
+      headers: await this.getHeaders()
     })
 
-    if(!resp.ok){
+    if (!resp.ok) {
       return undefined
     }
 

@@ -6,6 +6,7 @@ import (
 	challengeAnswers "haasteikko/backend/challenge_answers"
 	"haasteikko/backend/library"
 	sharedchallenges "haasteikko/backend/sharedChallenges"
+	testingAuthV2 "haasteikko/backend/testing_auth_v2"
 
 	"log"
 	"net/http"
@@ -22,5 +23,6 @@ func main() {
 	sharedchallenges.ConfigureShareChallengeRoutes()
 	challengeAnswers.ConfigureAnswersRoutes()
 	challengeSolutions.ConfigureSolutionRoutes()
+	testingAuthV2.ConfigureTestingAuthRoutes()
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }

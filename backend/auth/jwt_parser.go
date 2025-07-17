@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -21,22 +22,37 @@ func (b JWTValidator) GetAuthenticatedUserId(r *http.Request) (string, error) {
 		return "", errors.New("missing token")
 	}
 
-	claims := &jwt.RegisteredClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
-		return getSecretBytes(), nil
-	})
+	// Parse the JWT without verifying the signature
+	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
 		return "", err
 	}
-	if !token.Valid {
-		return "", errors.New("invalid token")
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("invalid claims type")
 	}
 
-	if exp, err := token.Claims.GetExpirationTime(); err == nil && exp.Time.Before(time.Now()) {
-		return "", errors.New("token expired")
+	// Optionally check expiration if present
+	if expVal, ok := claims["exp"]; ok {
+		switch exp := expVal.(type) {
+		case float64:
+			if time.Unix(int64(exp), 0).Before(time.Now()) {
+				return "", errors.New("token expired")
+			}
+		case json.Number:
+			expInt, err := exp.Int64()
+			if err == nil && time.Unix(expInt, 0).Before(time.Now()) {
+				return "", errors.New("token expired")
+			}
+		}
 	}
 
-	return claims.Subject, nil
+	oid, ok := claims["oid"].(string)
+	if !ok || oid == "" {
+		return "", errors.New("oid claim not found")
+	}
+	return oid, nil
 }
 
 func CreateToken(username string, userId string) (string, error) {

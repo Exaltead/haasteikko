@@ -9,6 +9,8 @@ env:
   AZURE_FUNCTIONAPP_NAME: "haasteikkostg-flex-api-hsvowedtubwye"
   AZURE_FUNCTIONAPP_PACKAGE_PATH: "./backend/deployment"
   AZURE_STORAGE_ACCOUNT_NAME: "haasteikkostghshsvowedt"
+  AZURE_EXTERNAL_TENANT_ID: "598750cd-d651-40f0-a8ba-dc7d2409b558"
+  AZURE_EXTERNAL_CLIENT_ID: "7026c030-9feb-4589-b17f-cc27c5cacb6d"
   API_URL: "https://haasteikkostg-flex-api-hsvowedtubwye.azurewebsites.net/api"
 
 jobs:
@@ -67,6 +69,11 @@ jobs:
       - name: Build frontend
         env:
           VITE_API_URL: ${{ env.API_URL }}
+          VITE_CLIENT_ID: ${{ env.AZURE_EXTERNAL_CLIENT_ID}}
+          VITE_TENANT_ID: ${{ env.AZURE_EXTERNAL_TENANT_ID }}
+          VITE_REDIRECT_URI: https://haasteikkostghshsvowedt.z1.web.core.windows.net/auth/callback
+          VITE_POST_LOGOUT_REDIRECT_URI: https://haasteikkostghshsvowedt.z1.web.core.windows.net
+          VITE_APP_CIAM_NAME: haasteikko
         run: |
           cd frontend
           npm ci

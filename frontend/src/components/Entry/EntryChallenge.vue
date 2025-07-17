@@ -5,8 +5,8 @@ import { RadioGroup, RadioGroupLabel, RadioGroupOption } from "@headlessui/vue"
 import { v4 } from "uuid";
 import { computed, ref } from "vue";
 import BrandedButton from "../basics/BrandedButton.vue";
-import { fetchChallenges } from "@/api/challengeApi";
-import { addAnswer, getAnswer, updateAnswer } from "@/api/answerApi";
+import { challengeApiClient } from "@/api/challengeApiClient";
+import { answerApiClient } from "@/api/answerApiClient";
 import TextInput from "../basics/TextInput.vue";
 
 
@@ -21,9 +21,9 @@ const questions = ref<Question[]>([])
 let answerSetId: string | undefined = undefined
 const challengeName = ref<string>("Haaste")
 async function refreshData(): Promise<void> {
-  const { id, answers } = await getAnswer(props.challengeId, props.itemId)
+  const { id, answers } = await answerApiClient.getAnswer(props.challengeId, props.itemId)
   answerSetId = id
-  const challenge = (await fetchChallenges())
+  const challenge = (await challengeApiClient.fetchChallenges())
     .find(t => t.id === props.challengeId)
   if (challenge) {
     challengeName.value = challenge.name
@@ -108,11 +108,11 @@ async function submit() {
   const answers: Answer[] = [...answersMap.value.values()]
   isSubmitting.value = true
   if (!answerSetId) {
-    await addAnswer(answers, props.challengeId, props.itemId)
+    await answerApiClient.addAnswer(answers, props.challengeId, props.itemId)
 
   }
   else {
-    await updateAnswer(answerSetId, answers, props.challengeId, props.itemId)
+    await answerApiClient.updateAnswer(answerSetId, answers, props.challengeId, props.itemId)
   }
   isSubmitting.value = false
 

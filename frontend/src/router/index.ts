@@ -6,6 +6,8 @@ import { isLoggedIn } from "@/modules/auth-store"
 import ChallengeManagementView from "@/views/ChallengeManagementView.vue"
 import ChallengeSolutionView from "@/views/ChallengeSolutionView.vue"
 import OverallChallengesView from "@/views/OverallChallengesView.vue"
+import RedirectPage from "@/views/RedirectPage.vue"
+import { getAccessToken } from "@/auth/auth"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,18 +42,34 @@ const router = createRouter({
       name: "challengeSolution",
       component: ChallengeSolutionView,
     },
+    {
+      path: "/auth/callback",
+      name: "authCallback",
+      component: RedirectPage
+    }
   ],
 })
 
-router.beforeEach((to) => {
-  const isAuthenticated = isLoggedIn()
 
-  if (to.name !== "login" && !isAuthenticated) {
+router.beforeEach((to) => {
+  if (to.name === "authCallback") {
+    return undefined
+  }
+
+  return getAccessToken().then((token) => {
+    const isAuthenticated = !!token
+    if (!isAuthenticated && to.name !== "login") {
+      return { name: "login" }
+    }
+
+    if (isAuthenticated && to.name === "login") {
+      return { name: "home" }
+    }
+    return undefined
+  }).catch((err) => {
+    console.log("Error getting access token:", err)
     return { name: "login" }
-  }
-  if (to.name === "login" && isAuthenticated) {
-    return { name: "home" }
-  }
+  })
 })
 
 export default router

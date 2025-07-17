@@ -1,7 +1,11 @@
 param appName string
 
 @secure()
-param clientSecret string
+param authClientId string
+@secure()
+param authClientSecret string
+
+param openIdConnectWellKnownConfiguration string = 'https://haasteikko.ciamlogin.com/haasteikko.onmicrosoft.com/v2.0/.well-known/openid-configuration'
 
 var uniqueSuffix = uniqueString(resourceGroup().id)
 var location = resourceGroup().location
@@ -24,7 +28,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-12-01-preview' = {
     name: 'ClientSecret'
     properties: {
       contentType: 'text/plain'
-      value: clientSecret
+      value: authClientSecret
     }
   }
 }
@@ -270,7 +274,6 @@ resource hostingStorageAccountBlobService 'Microsoft.Storage/storageAccounts/blo
   name: 'default'
 }
 
-
 resource flexBackendContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2024-01-01' = {
   parent: hostingStorageAccountBlobService
   name: 'flexbackend'
@@ -419,3 +422,29 @@ resource flexAppToStorageAccount 'Microsoft.Authorization/roleAssignments@2022-0
   }
 }
 
+resource flexFunctionAppAuthSettings 'Microsoft.Web/sites/config@2022-09-01' = {
+  parent: flexFunctionApp
+  name: 'authsettingsV2'
+  properties: {
+    platform: {
+      enabled: true
+      runtimeVersion: '~1'
+    }
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'Return401'
+    }
+    identityProviders: {
+      customOpenIdConnectProviders: {
+        registration: {
+          enabled: true
+          registration: {
+            clientId: authClientId
+            clientCredential: { clientSecretSettingName: 'SECRET_KEY' }
+            openIdConnectConfiguration: { wellKnownOpenIdConfiguration: openIdConnectWellKnownConfiguration }
+          }
+        }
+      }
+    }
+  }
+}
