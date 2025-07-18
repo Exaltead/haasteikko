@@ -22,7 +22,7 @@
     "zod": "^3.25.75"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.8",
+    "@tailwindcss/vite": "^4.1.11",
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^24.0.13",
     "@vitejs/plugin-vue": "^5.2.4",
