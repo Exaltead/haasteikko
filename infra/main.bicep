@@ -344,10 +344,7 @@ resource flexFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
           name: 'AzureWebJobsStorage__accountName'
           value: hostingStorageAccount.name
         }
-        {
-          name: 'COSMOS_CONNECTION_STRING'
-          value: listConnectionStrings(databaseAccount.id, '2019-12-12').connectionStrings[0].connectionString
-        }
+        // Cosmos DB connection string removed for Managed Identity auth
         { name: 'DATABASE_NAME', value: databaseStorage.name }
         {
           name: 'SECRET_KEY'
@@ -355,6 +352,7 @@ resource flexFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
         }
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: applicationInsights.properties.ConnectionString }
       ]
+
       cors: {
         #disable-next-line BCP329
         allowedOrigins: [
@@ -384,6 +382,18 @@ resource flexFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
         }
       }
     }
+  }
+}
+
+var dataContributorRoleDefinitionId = '00000000-0000-0000-0000-000000000002' // Cosmos DB SQL Built-in Data Contributor
+
+resource flexAppToCosmosSQLRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2025-04-15' = {
+  name: guid(databaseAccount.id, flexFunctionApp.id, 'CosmosDbSQLDataContributor')
+  parent: databaseAccount
+  properties: {
+    roleDefinitionId: '/${subscription().id}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DocumentDB/databaseAccounts/${databaseAccount.name}/sqlRoleDefinitions/${dataContributorRoleDefinitionId}'
+    principalId: flexFunctionApp.identity.principalId
+    scope: databaseAccount.id
   }
 }
 

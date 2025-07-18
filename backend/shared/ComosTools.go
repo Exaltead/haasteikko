@@ -17,17 +17,14 @@ import (
 
 func GetClient() (*azcosmos.Client, error) {
 	endpoint := os.Getenv("COSMOS_ENDPOINT")
-	if endpoint != "" {
-		cred, err := azidentity.NewDefaultAzureCredential(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create a credential %v", err)
-		}
-
-		return azcosmos.NewClient("https://haastest-db-56ltxqe2wkftk.documents.azure.com:443/", cred, nil)
-
+	if endpoint == "" {
+		return nil, errors.New("COSMOS_ENDPOINT environment variable is not set")
 	}
-	connectionString := os.Getenv("COSMOS_CONNECTION_STRING")
-	return azcosmos.NewClientFromConnectionString(connectionString, nil)
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create a credential: %v", err)
+	}
+	return azcosmos.NewClient(endpoint, cred, nil)
 }
 
 func ConnectToCosmosContainer(containerName string) (*azcosmos.ContainerClient, error) {
