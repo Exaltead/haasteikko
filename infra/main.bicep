@@ -344,7 +344,7 @@ resource flexFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
           name: 'AzureWebJobsStorage__accountName'
           value: hostingStorageAccount.name
         }
-        // Cosmos DB connection string removed for Managed Identity auth
+        { name: 'COSMOS_ENDPOINT', value: databaseAccount.properties.documentEndpoint }
         { name: 'DATABASE_NAME', value: databaseStorage.name }
         {
           name: 'SECRET_KEY'
