@@ -1,5 +1,5 @@
 
-import { getAccessToken } from "@/auth/auth"
+//import { useAuth0 } from '@auth0/auth0-vue';
 import { z } from "zod"
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -15,10 +15,11 @@ export abstract class BaseApiClient<
     urlSuffix: string,
   ) {
     this.baseUrl = `${API_URL}/${urlSuffix}`
+    //const {} = useAuth0()
   }
 
   private async getHeaders(): Promise<HeadersInit> {
-    const accessToken = await getAccessToken()
+    const accessToken = ""//await getAccessToken()
     return {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
