@@ -5,15 +5,12 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-/*
-use axum_extra::{
-    TypedHeader,
-    headers::{Authorization, authorization::Bearer},
-};*/
 
 use crate::auth::User;
 
 mod auth;
+mod database;
+mod migrations;
 
 #[derive(Clone)]
 struct AppState {
@@ -60,6 +57,10 @@ async fn main() {
         .await
         .expect("Failed to fetch JWKS");
 
+    let mut migrator = migrations::Migrator::new("database.sqlite", "migrations")
+        .expect("Failed to create migrator");
+    migrator.run_migrations().expect("Failed to run migrations");
+
     let app_state = AppState {
         jwks,
         required_audience,
@@ -69,9 +70,9 @@ async fn main() {
         .route("/protected", get(protected))
         .with_state(app_state);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .unwrap();
+    let address = "0.0.0.0:3000";
+    println!("Listening on http://{}", address);
+    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 
