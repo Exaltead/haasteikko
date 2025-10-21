@@ -10,12 +10,14 @@ use crate::auth::User;
 
 mod auth;
 mod database;
+mod library;
 mod migrations;
 
 #[derive(Clone)]
 struct AppState {
     jwks: jsonwebtoken::jwk::JwkSet,
     required_audience: String,
+    database_path: String,
 }
 
 impl FromRequestParts<AppState> for User {
@@ -48,6 +50,8 @@ impl FromRequestParts<AppState> for User {
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
+    let database_path =
+        std::env::var("DATABASE_PATH").unwrap_or_else(|_| "database.sqlite".to_string());
 
     let jwks_url = std::env::var("JWKS_URL").expect("JWKS_URL must be set");
     let required_audience =
@@ -57,17 +61,19 @@ async fn main() {
         .await
         .expect("Failed to fetch JWKS");
 
-    let mut migrator = migrations::Migrator::new("database.sqlite", "migrations")
+    let mut migrator = migrations::Migrator::new(&database_path, &"migrations".to_string())
         .expect("Failed to create migrator");
     migrator.run_migrations().expect("Failed to run migrations");
 
     let app_state = AppState {
         jwks,
         required_audience,
+        database_path: database_path,
     };
 
     let app = Router::new()
         .route("/protected", get(protected))
+        .nest("/api", library::library_routes())
         .with_state(app_state);
 
     let address = "0.0.0.0:3000";

@@ -9,6 +9,12 @@ CREATE table IF NOT EXISTS library (
     favorite INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS activated_item_challenge(
+    item_id TEXT NOT NULL REFERENCES library(id) ON DELETE CASCADE,
+    challenge_id TEXT NOT NULL REFERENCES challenge(id) ON DELETE CASCADE,
+    PRIMARY KEY (item_id, challenge_id)
+)
+
 CREATE TABLE IF NOT EXISTS challenge (
     it TEXT PRIMARY KEY,
     name TEXT NOT NULL,

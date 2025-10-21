@@ -1,12 +1,9 @@
 use rusqlite::{Connection, Result, Row, params};
 
 /// A trait that must be implemented by any type that wants to be stored in the database
-pub trait DbModel: Sized {
+/*pub trait DbModel: Sized {
     /// Name of the table where this model is stored
     fn table_name() -> String;
-
-    /// SQL for creating the table for this model
-    fn create_table_sql() -> String;
 
     /// Convert a database row into this type
     fn from_row(row: &Row) -> Result<Self>;
@@ -16,10 +13,18 @@ pub trait DbModel: Sized {
 
     /// Get the names of columns for this model
     fn column_names() -> Vec<String>;
-}
+}*/
 
 pub struct Database {
     conn: Connection,
+}
+
+pub trait Repository<TType, TFilter> {
+    fn create(&self, item: &TType) -> Result<String>;
+    fn read_by_id(&self, id: &str) -> Result<Option<TType>>;
+    fn search(&self, filter: TFilter) -> Result<Vec<TType>>;
+    fn update(&self, id: &str, item: &TType) -> Result<bool>;
+    fn delete(&self, id: &str) -> Result<bool>;
 }
 
 impl Database {
@@ -33,13 +38,50 @@ impl Database {
         Ok(Database { conn })
     }
 
-    /// Initialize a table for a specific model
-    pub fn init_table<T: DbModel>(&self) -> Result<()> {
-        self.conn.execute(&T::create_table_sql(), [])?;
-        Ok(())
+    /// Execute a prepared statement with parameters
+    pub fn execute(&self, sql: &str, params: &[&dyn rusqlite::ToSql]) -> Result<usize> {
+        self.conn.execute(sql, params)
     }
 
-    /// Create a new record in the database
+    /// Query multiple rows with custom SQL
+    pub fn query_map<T, F>(
+        &self,
+        sql: &str,
+        params: &[&dyn rusqlite::ToSql],
+        f: F,
+    ) -> Result<Vec<T>>
+    where
+        F: FnMut(&Row<'_>) -> Result<T>,
+    {
+        let mut stmt = self.conn.prepare(sql)?;
+        let rows = stmt.query_map(params, f)?;
+
+        let mut results = Vec::new();
+        for result in rows {
+            results.push(result?);
+        }
+        Ok(results)
+    }
+
+    /// Query a single row with custom SQL
+    pub fn query_row<T, F>(
+        &self,
+        sql: &str,
+        params: &[&dyn rusqlite::ToSql],
+        f: F,
+    ) -> Result<Option<T>>
+    where
+        F: FnOnce(&Row<'_>) -> Result<T>,
+    {
+        match self.conn.query_row(sql, params, f) {
+            Ok(value) => Ok(Some(value)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+
+    /*
+        /// Create a new record in the database
     pub fn create<T: DbModel>(&self, model: &T) -> Result<i64> {
         let columns = T::column_names().join(", ");
         let placeholders = vec!["?"; T::column_names().len()].join(", ");
@@ -105,87 +147,5 @@ impl Database {
         let sql = format!("DELETE FROM {} WHERE id = ?", T::table_name());
         let rows_affected = self.conn.execute(&sql, params![id])?;
         Ok(rows_affected > 0)
-    }
-}
-
-// Example of how to use the generic CRUD operations:
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rusqlite::types::Value;
-
-    // Example model
-    #[derive(Debug, PartialEq)]
-    struct User {
-        id: Option<i64>,
-        name: String,
-        email: String,
-    }
-
-    impl DbModel for User {
-        fn table_name() -> String {
-            "users".to_string()
-        }
-
-        fn create_table_sql() -> String {
-            "CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL
-            )"
-            .to_string()
-        }
-
-        fn from_row(row: &Row) -> Result<Self> {
-            Ok(User {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                email: row.get(2)?,
-            })
-        }
-
-        fn to_params(&self) -> Vec<Box<dyn rusqlite::ToSql>> {
-            vec![Box::new(self.name.clone()), Box::new(self.email.clone())]
-        }
-
-        fn column_names() -> Vec<String> {
-            vec!["name".to_string(), "email".to_string()]
-        }
-    }
-
-    #[test]
-    fn test_crud_operations() -> Result<()> {
-        let db = Database::new(":memory:")?;
-        db.init_table::<User>()?;
-
-        // Create
-        let user = User {
-            id: None,
-            name: "John Doe".to_string(),
-            email: "john@example.com".to_string(),
-        };
-        let id = db.create(&user)?;
-
-        // Read
-        let retrieved_user = db.read::<User>(id)?.unwrap();
-        assert_eq!(retrieved_user.name, "John Doe");
-
-        // Update
-        let updated_user = User {
-            id: Some(id),
-            name: "Jane Doe".to_string(),
-            email: "jane@example.com".to_string(),
-        };
-        db.update::<User>(id, &updated_user)?;
-
-        // Verify update
-        let updated = db.read::<User>(id)?.unwrap();
-        assert_eq!(updated.name, "Jane Doe");
-
-        // Delete
-        assert!(db.delete::<User>(id)?);
-        assert!(db.read::<User>(id)?.is_none());
-
-        Ok(())
-    }
+    }*/
 }
