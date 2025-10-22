@@ -1,6 +1,5 @@
-
-//import { useAuth0 } from '@auth0/auth0-vue';
 import { z } from "zod"
+import type { HttpProxy } from "./HttpProxy"
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -13,84 +12,31 @@ export abstract class BaseApiClient<
     private readonly schema: T,
     private readonly newSchema: TNew,
     urlSuffix: string,
+    private readonly proxy: HttpProxy,
   ) {
     this.baseUrl = `${API_URL}/${urlSuffix}`
-    //const {} = useAuth0()
-  }
-
-  private async getHeaders(): Promise<HeadersInit> {
-    const accessToken = ""//await getAccessToken()
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    }
   }
 
   protected async updateEntity(id: string, entity: z.infer<T>): Promise<void> {
     const validated = this.schema.parse(entity)
-    const resp = await fetch(`${this.baseUrl}/${id}`, {
-      method: "PUT",
-      headers: await this.getHeaders(),
-      body: JSON.stringify(validated),
-    })
-
-    if (!resp.ok) {
-      throw new Error("Failed to update entity")
-    }
+    return await this.proxy.put(`${this.baseUrl}/${id}`, validated)
   }
 
   protected async addEntity(newEntity: Omit<z.infer<T>, "id">): Promise<string> {
     const validated = this.newSchema.parse(newEntity)
-    const resp = await fetch(this.baseUrl, {
-      method: "POST",
-      headers: await this.getHeaders(),
-      body: JSON.stringify(validated),
-    })
-
-    if (!resp.ok) {
-      throw new Error("Failed to add entity")
-    }
-
-    const data = z.object({ id: z.string() }).parse(await resp.json())
-    return data.id
+    const { id } = await this.proxy.post(this.baseUrl, validated, z.object({ id: z.string() }))
+    return id
   }
 
   protected async deleteEntity(id: string): Promise<void> {
-    const resp = await fetch(`${this.baseUrl}/${id}`, {
-      method: "DELETE",
-      headers: await this.getHeaders(),
-    })
-
-    if (!resp.ok) {
-      throw new Error("Failed to delete entity")
-    }
+    return await this.proxy.delete(`${this.baseUrl}/${id}`)
   }
 
   protected async fetchEntities(queryParams: URLSearchParams): Promise<z.infer<T>[]> {
-    const resp = await fetch(this.baseUrl + "?" + queryParams, {
-      method: "GET",
-      headers: await this.getHeaders(),
-    })
-
-    if (!resp.ok) {
-      throw new Error("Failed to fetch entities")
-    }
-    const data = await resp.json()
-    return this.schema.array().parse(data)
+    return await this.proxy.get(this.baseUrl, queryParams, this.schema.array())
   }
 
   protected async fetchEntity(id: string): Promise<z.infer<T> | undefined> {
-    const resp = await fetch(`${this.baseUrl}/${id}`, {
-      method: "GET",
-      headers: await this.getHeaders()
-    })
-
-    if (!resp.ok) {
-      return undefined
-    }
-
-    const data = await resp.json()
-
-    return this.schema.optional().parse(data)
+    return await this.proxy.get(`${this.baseUrl}/${id}`, undefined, this.schema.optional())
   }
 }

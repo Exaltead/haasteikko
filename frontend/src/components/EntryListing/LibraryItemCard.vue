@@ -4,8 +4,9 @@ import type { LibraryItem } from '@/models/LibraryItem';
 import IconChevronRight from '../icons/IconChevronRight.vue';
 import CustomIcon from '../basics/CustomIcon.vue';
 import { ref } from 'vue';
-import { libraryApi } from '@/api/libraryApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';
 
+const libraryApi = useLibraryApi()
 const props = defineProps<{
   item: LibraryItem
 }>()

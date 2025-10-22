@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { challengeApiClient } from '@/api/challengeApiClient';
+import { useChallengeApi } from '@/api/challengeApiClient';
 import EditChallenge from '@/components/ChallengeManagement/EditChallenge.vue';
 import ManageChallenges from '@/components/ChallengeManagement/ManageChallenges.vue';
 import type { Challenge } from '@/models/challenge';
 import { ref } from 'vue';
-
+const challengeApiClient = useChallengeApi();
 
 const data = ref<Challenge[]>([]);
 

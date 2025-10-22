@@ -1,5 +1,7 @@
 import { solutionSetSchema, type SolutionSet } from "@/models/challenge"
 import { BaseApiClient } from "./baseApiClient"
+import { useHttpApi } from "@/plugins/HttpPlugin"
+import type { HttpProxy } from "./HttpProxy"
 
 const newSolutionSetSchema = solutionSetSchema.omit({ id: true })
 
@@ -7,8 +9,8 @@ class SolutionsApiClient extends BaseApiClient<
   typeof solutionSetSchema,
   typeof newSolutionSetSchema
 > {
-  constructor() {
-    super(solutionSetSchema, newSolutionSetSchema, "solution")
+  constructor(proxy: HttpProxy) {
+    super(solutionSetSchema, newSolutionSetSchema, "solution", proxy)
   }
 
   async fetchSolutionSets(): Promise<SolutionSet[]> {
@@ -34,4 +36,7 @@ class SolutionsApiClient extends BaseApiClient<
   }
 }
 
-export const solutionsApiClient = new SolutionsApiClient()
+export function useSolutionsApi() {
+  const httpProxy = useHttpApi()
+  return new SolutionsApiClient(httpProxy)
+}

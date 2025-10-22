@@ -4,9 +4,11 @@ import BrandedButton from '@/components/basics/BrandedButton.vue';
 import { computed, ref } from 'vue'
 import TextInput from "@/components/basics/TextInput.vue"
 import type { Book, Game, LibraryItem } from '@/models/LibraryItem';
-import { libraryApi } from '@/api/libraryApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';
 import BrandedSelect from '@/components/basics/BrandedSelect.vue';
 
+
+const libraryApi = useLibraryApi()
 const { isModalOpen } = defineProps<{
   isModalOpen: boolean
 }>()

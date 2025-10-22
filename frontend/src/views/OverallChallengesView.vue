@@ -1,9 +1,11 @@
 <script lang="ts" setup>
-import { challengeApiClient } from '@/api/challengeApiClient';
-import { solutionsApiClient } from '@/api/solutionsApiClient';
+import { useChallengeApi } from '@/api/challengeApiClient';
+import { useSolutionsApi } from '@/api/solutionsApiClient';
 import type { Challenge, SolutionSet } from '@/models/challenge';
 import { computed, ref } from 'vue';
 
+const challengeApiClient = useChallengeApi()
+const solutionsApiClient = useSolutionsApi()
 
 type ChallengeAndSolution = {
   challenge: Challenge

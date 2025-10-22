@@ -1,7 +1,7 @@
 import type { HttpProxy } from "@/api/HttpProxy"
 import { useAuth0 } from "@auth0/auth0-vue"
 import { inject, type Plugin } from "vue"
-import type { ZodTypeAny, TypeOf } from "zod"
+import type { ZodTypeAny, TypeOf, z } from "zod"
 
 export type ApiConfig = {
   apiUrl: string
@@ -35,11 +35,14 @@ export function useHttpApi(): HttpProxy {
   const proxy: HttpProxy = {
     get: async function <T extends ZodTypeAny>(
       route: string,
-      queryParams: URLSearchParams,
+      queryParams: URLSearchParams | undefined,
       schema: T,
-    ): Promise<T> {
+    ): Promise<z.infer<T>> {
       const url = new URL(route, apiConfig.apiUrl)
-      const resp = await fetch(url + "?" + queryParams, {
+      if (queryParams) {
+        url.search = queryParams.toString()
+      }
+      const resp = await fetch(url, {
         method: "GET",
         headers: await getHeaders(),
       })

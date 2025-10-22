@@ -5,10 +5,12 @@ import { RadioGroup, RadioGroupLabel, RadioGroupOption } from "@headlessui/vue"
 import { v4 } from "uuid";
 import { computed, ref } from "vue";
 import BrandedButton from "../basics/BrandedButton.vue";
-import { challengeApiClient } from "@/api/challengeApiClient";
-import { answerApiClient } from "@/api/answerApiClient";
+import { useChallengeApi } from "@/api/challengeApiClient";
+import { useAnswerApi } from "@/api/answerApiClient";
 import TextInput from "../basics/TextInput.vue";
 
+const challengeApiClient = useChallengeApi()
+const answerApiClient = useAnswerApi()
 
 const props = defineProps<{ itemId: string, challengeId: string }>()
 const emits = defineEmits<{

@@ -1,16 +1,13 @@
-
 import { challengeSchema, type Challenge } from "@/models/challenge"
-import { z } from "zod"
 import { BaseApiClient } from "./baseApiClient"
+import type { HttpProxy } from "./HttpProxy"
+import { useHttpApi } from "@/plugins/HttpPlugin"
 
 const newChallengeSchema = challengeSchema.omit({ id: true })
 
-class ChallengeApiClient extends BaseApiClient<
-  typeof challengeSchema,
-  typeof newChallengeSchema
-> {
-  constructor() {
-    super(challengeSchema, newChallengeSchema, "challenge")
+class ChallengeApiClient extends BaseApiClient<typeof challengeSchema, typeof newChallengeSchema> {
+  constructor(proxy: HttpProxy) {
+    super(challengeSchema, newChallengeSchema, "challenge", proxy)
   }
 
   async fetchChallenges(): Promise<Challenge[]> {
@@ -26,4 +23,7 @@ class ChallengeApiClient extends BaseApiClient<
   }
 }
 
-export const challengeApiClient = new ChallengeApiClient()
+export function useChallengeApi(): ChallengeApiClient {
+  const proxy = useHttpApi()
+  return new ChallengeApiClient(proxy)
+}

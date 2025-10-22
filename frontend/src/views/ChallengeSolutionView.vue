@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { answerApiClient } from '@/api/answerApiClient';
-import { challengeApiClient } from '@/api/challengeApiClient';
-import { libraryApi } from '@/api/libraryApiClient';
+import { useAnswerApi } from '@/api/answerApiClient';
+import { useChallengeApi } from '@/api/challengeApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';
 
-import { solutionsApiClient } from '@/api/solutionsApiClient';
+import { useSolutionsApi } from '@/api/solutionsApiClient';
 import BrandedButton from '@/components/basics/BrandedButton.vue';
 import BrandedSelect from '@/components/basics/BrandedSelect.vue';
 import type { Answer, Question, Solution, SolutionSet } from '@/models/challenge';
@@ -12,6 +12,10 @@ import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
+const libraryApi = useLibraryApi()
+const challengeApiClient = useChallengeApi()
+const answerApiClient = useAnswerApi()
+const solutionsApiClient = useSolutionsApi()
 
 
 const allItems = ref<LibraryItem[]>([])

@@ -1,8 +1,8 @@
-
 import { answerSchema, type Answer } from "@/models/challenge"
 import { z } from "zod"
 import { BaseApiClient } from "./baseApiClient"
-
+import type { HttpProxy } from "./HttpProxy"
+import { useHttpApi } from "@/plugins/HttpPlugin"
 
 const answerSetSchema = z.object({
   id: z.string().uuid(),
@@ -19,16 +19,15 @@ const newAnswerSetSchema = z.object({
 
 type AnswerSet = z.infer<typeof answerSetSchema>
 
-class AnswerApiClient extends BaseApiClient<
-  typeof answerSetSchema,
-  typeof newAnswerSetSchema
-> {
-  constructor() {
-    super(answerSetSchema, newAnswerSetSchema, "answer")
+class AnswerApiClient extends BaseApiClient<typeof answerSetSchema, typeof newAnswerSetSchema> {
+  constructor(proxy: HttpProxy) {
+    super(answerSetSchema, newAnswerSetSchema, "answer", proxy)
   }
 
-
-  async getAnswer(challengeId: string, itemId: string): Promise<{ id?: string | undefined; answers: Answer[] }> {
+  async getAnswer(
+    challengeId: string,
+    itemId: string,
+  ): Promise<{ id?: string | undefined; answers: Answer[] }> {
     const results = await this.fetchEntities(new URLSearchParams({ challengeId, itemId }))
     if (results.length === 0) {
       return { answers: [] }
@@ -45,14 +44,21 @@ class AnswerApiClient extends BaseApiClient<
     return results.flatMap((t) => t.answers)
   }
 
-
   async addAnswer(answers: Answer[], challengeId: string, itemId: string): Promise<string> {
     return this.addEntity({ challengeId, itemId, answers })
   }
 
-  async updateAnswer(id: string, answers: Answer[], challengeId: string, itemId: string): Promise<void> {
+  async updateAnswer(
+    id: string,
+    answers: Answer[],
+    challengeId: string,
+    itemId: string,
+  ): Promise<void> {
     return this.updateEntity(id, { id, challengeId, itemId, answers })
   }
 }
 
-export const answerApiClient = new AnswerApiClient()
+export function useAnswerApi() {
+  const proxy = useHttpApi()
+  return new AnswerApiClient(proxy)
+}

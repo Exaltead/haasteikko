@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { challengeApiClient } from '@/api/challengeApiClient';
-import { libraryApi } from '@/api/libraryApiClient';;
+import { useChallengeApi } from '@/api/challengeApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';;
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
 import EntryChallenge from '@/components/Entry/EntryChallenge.vue';
 import IconBack from '@/components/icons/IconBack.vue';
@@ -10,6 +10,9 @@ import { TabGroup, TabList, TabPanel, TabPanels, Tab } from '@headlessui/vue';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { z } from 'zod';
+
+const libraryApi = useLibraryApi()
+const challengeApiClient = useChallengeApi()
 
 const route = useRoute()
 

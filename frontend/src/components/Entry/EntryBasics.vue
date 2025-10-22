@@ -3,10 +3,11 @@ import type { LibraryItem } from '@/models/LibraryItem';
 import { computed, ref } from 'vue';
 import Button from "@/components/basics/BrandedButton.vue"
 import TextInput from "@/components/basics/TextInput.vue"
-import { libraryApi } from '@/api/libraryApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';
 import type { Challenge } from '@/models/challenge';
 import ManagementList from '../basics/ManagementList.vue';
 
+const libraryApi = useLibraryApi()
 
 
 const { item, challenges } = defineProps<{
