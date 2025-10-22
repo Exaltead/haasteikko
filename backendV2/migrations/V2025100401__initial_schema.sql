@@ -6,17 +6,18 @@ CREATE table IF NOT EXISTS library (
     author TEXT NOT NULL,
     added_at TEXT NOT NULL,
     completed_at TEXT NOT NULL,
-    favorite INTEGER NOT NULL DEFAULT 0
+    favorite INTEGER NOT NULL DEFAULT 0,
+    translator TEXT
 );
 
 CREATE TABLE IF NOT EXISTS activated_item_challenge(
     item_id TEXT NOT NULL REFERENCES library(id) ON DELETE CASCADE,
     challenge_id TEXT NOT NULL REFERENCES challenge(id) ON DELETE CASCADE,
     PRIMARY KEY (item_id, challenge_id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS challenge (
-    it TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     status TEXT NOT NULL,
     target_media TEXT NOT NULL,

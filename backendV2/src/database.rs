@@ -16,14 +16,14 @@ use rusqlite::{Connection, Result, Row, params};
 }*/
 
 pub struct Database {
-    conn: Connection,
+    pub conn: Connection,
 }
 
 pub trait Repository<TType, TFilter> {
-    fn create(&self, item: &TType) -> Result<String>;
+    fn create(&mut self, item: &TType) -> Result<String>;
     fn read_by_id(&self, id: &str) -> Result<Option<TType>>;
     fn search(&self, filter: TFilter) -> Result<Vec<TType>>;
-    fn update(&self, id: &str, item: &TType) -> Result<bool>;
+    fn update(&mut self, id: &str, item: &TType) -> Result<bool>;
     fn delete(&self, id: &str) -> Result<bool>;
 }
 

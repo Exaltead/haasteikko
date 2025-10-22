@@ -7,13 +7,15 @@ use uuid::Uuid;
 
 
 impl Repository<LibraryItem, LibraryFilter> for Database {
-    fn create(&self, item: &LibraryItem) -> Result<String> {
+    fn create(&mut self, item: &LibraryItem) -> Result<String> {
         let sql = 
-            "INSERT INTO library (id, user_id, kind, title, author, added_at, completed_at, favorite) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            "INSERT INTO library (id, user_id, kind, title, author, added_at, completed_at, favorite, translator) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         let id = Uuid::new_v4().to_string();
-        self.execute(
+        let tx = self.conn.transaction()?;
+
+        tx.execute::<&[&dyn rusqlite::ToSql]>(
             &sql,
             &[
                 &id,
@@ -24,24 +26,33 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
                 &item.added_at,
                 &item.completed_at,
                 &(if item.favorite { 1i64 } else { 0i64 }),
+                &item.translator
             ],
         )?;
+
+        // Insert new challenge associations
+        for challenge_id in &item.activated_challenge_ids {
+            tx.execute(
+                "INSERT INTO activated_item_challenge (item_id, challenge_id) VALUES (?, ?)",
+                &[&id, &challenge_id],
+            )?;
+        }
+
+        tx.commit()?; 
 
         Ok(id)
     }
 
     fn read_by_id(&self, id: &str) -> Result<Option<LibraryItem>> {
-        let sql = format!(
+        let sql = 
             "SELECT l.*, GROUP_CONCAT(aic.challenge_id) as challenge_ids 
-            FROM {} l 
+            FROM library l 
             LEFT JOIN activated_item_challenge aic ON l.id = aic.item_id 
             WHERE l.id = ?
-            GROUP BY l.id",
-            "library"
-        );
+            GROUP BY l.id";
 
         let row_map = |row: &rusqlite::Row| -> Result<LibraryItem> {
-            let challenge_ids: Option<String> = row.get(8)?;
+            let challenge_ids: Option<String> = row.get(9)?;
             let activated_challenge_ids = challenge_ids
                 .map(|ids| ids.split(',').map(String::from).collect())
                 .unwrap_or_default();
@@ -55,6 +66,7 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
                 added_at: row.get(5)?,
                 completed_at: row.get(6)?,
                 favorite: row.get::<_, i64>(7)? != 0,
+                translator: row.get(8)?,
                 activated_challenge_ids,
             })
         };
@@ -86,7 +98,7 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
         );
 
         let row_map = |row: &rusqlite::Row| -> Result<LibraryItem> {
-            let challenge_ids: Option<String> = row.get(8)?;
+            let challenge_ids: Option<String> = row.get(9)?;
             let activated_challenge_ids = challenge_ids
                 .map(|ids| ids.split(',').map(String::from).collect())
                 .unwrap_or_default();
@@ -100,31 +112,54 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
                 added_at: row.get(5)?,
                 completed_at: row.get(6)?,
                 favorite: row.get::<_, i64>(7)? != 0,
+                translator: row.get(8)?,
                 activated_challenge_ids,
             })
         };
         self.query_map(&sql, &params, row_map)
     }
 
-    fn update(&self, id: &str, item: &LibraryItem) -> Result<bool> {
+    fn update(&mut self, id: &str, item: &LibraryItem) -> Result<bool> {
+        // Update the main library item
         let sql = 
-            "UPDATE library SET user_id = ?, kind = ?, title = ?, author = ?, completed_at = ?, favorite = ? 
-             WHERE id = ?"    
-        ;
+            "UPDATE library SET user_id = ?, kind = ?, title = ?, author = ?, completed_at = ?, favorite = ?, translator = ? 
+             WHERE id = ?";
 
-        let result = self.execute(
-            &sql,
+        let tx = self.conn.transaction()?;
+
+
+        let result = tx.execute::<&[&dyn rusqlite::ToSql]>(
+            sql,
             &[
                 &item.user_id,
                 &item.kind,
                 &item.title,
                 &item.author,
                 &item.completed_at,
-                &(if item.favorite { 1i64 } else { 0i64 }),
+                &(if item.favorite { 1 } else { 0 }),
+                &item.translator,
                 &id,
             ],
         )?;
 
+        // Only proceed with challenge updates if the item exists
+        if result > 0 {
+            // Delete existing challenge associations
+            tx.execute(
+                "DELETE FROM activated_item_challenge WHERE item_id = ?",
+                &[&id],
+            )?;
+
+            // Insert new challenge associations
+            for challenge_id in &item.activated_challenge_ids {
+                tx.execute::<&[&dyn rusqlite::ToSql]>(
+                    "INSERT INTO activated_item_challenge (item_id, challenge_id) VALUES (?, ?)",
+                    &[&id, &challenge_id],
+                )?;
+            }
+        }
+
+        tx.commit()?;
         Ok(result > 0)
     }
 
@@ -151,12 +186,13 @@ mod tests {
             completed_at: Utc::now().to_rfc3339(),
             favorite: true,
             activated_challenge_ids: Vec::new(),
+            translator: Some("Test Translator".to_string()),
         }
     }
 
     #[test]
     fn test_crud_operations() -> Result<()> {
-        let db = Database::new(":memory:")?;
+        let mut db = Database::new(":memory:")?;
 
         // Create test tables
         db.execute(
@@ -168,7 +204,8 @@ mod tests {
                 author TEXT NOT NULL,
                 added_at TEXT NOT NULL,
                 completed_at TEXT NOT NULL,
-                favorite INTEGER NOT NULL
+                favorite INTEGER NOT NULL,
+                translator TEXT
             )",
             &[],
         )?;
@@ -220,14 +257,23 @@ mod tests {
         assert_eq!(items[0].title, item.title);
         assert_eq!(items[0].activated_challenge_ids, vec![challenge_id]);
 
-        // Test update
+        // Test update with challenge modifications
         let mut updated_item = retrieved;
         updated_item.title = "Updated Title".to_string();
+        // Add a new challenge ID
+        let new_challenge_id = "test_challenge_2";
+        db.execute(
+            "INSERT INTO challenge (id) VALUES (?)",
+            &[&new_challenge_id],
+        )?;
+        updated_item.activated_challenge_ids = vec![new_challenge_id.to_string()];
+        
         let updated = db.update(&id, &updated_item)?;
         assert!(updated);
 
         let retrieved = db.read_by_id(&id)?.expect("Item should exist");
         assert_eq!(retrieved.title, "Updated Title");
+        assert_eq!(retrieved.activated_challenge_ids, vec![new_challenge_id]);
 
         // Test delete
         let deleted = db.delete(&id)?;
