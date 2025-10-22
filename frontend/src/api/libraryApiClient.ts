@@ -35,6 +35,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     translator: z.string().optional(),
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
+    completedAt: z.string(),
   }),
   z.object({
     kind: z.literal("Game"),
@@ -43,6 +44,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     author: z.string(),
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
+    completedAt: z.string(),
   }),
 ])
 
@@ -54,6 +56,7 @@ const newlibraryApiItemSchema = z.discriminatedUnion("kind", [
     translator: z.string().optional(),
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
+    completedAt: z.string(),
   }),
   z.object({
     kind: z.literal("Game"),
@@ -61,6 +64,7 @@ const newlibraryApiItemSchema = z.discriminatedUnion("kind", [
     author: z.string(),
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
+    completedAt: z.string(),
   }),
 ])
 
@@ -79,6 +83,7 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         translator: item.translator,
         title: item.title,
         author: item.author,
+        completedAt: item.completedAt,
       }
 
       return book
@@ -90,6 +95,7 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         activatedChallengeIds: item.activatedChallengeIds,
         title: item.title,
         creator: item.author,
+        completedAt: item.completedAt,
       }
 
       return game
@@ -106,6 +112,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         translator: item.translator,
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
+        completedAt: item.completedAt,
       }
     case "Game":
       return {
@@ -114,6 +121,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         author: item.creator,
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
+        completedAt: item.completedAt,
       }
   }
 }

@@ -163,7 +163,7 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
         Ok(result > 0)
     }
 
-    fn delete(&self, id: &str) -> Result<bool> {
+    fn delete(&mut self, id: &str) -> Result<bool> {
         let sql = format!("DELETE FROM {} WHERE id = ?", "library");
         let result = self.execute(&sql, &[&id])?;
         Ok(result > 0)

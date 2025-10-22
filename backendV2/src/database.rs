@@ -24,7 +24,7 @@ pub trait Repository<TType, TFilter> {
     fn read_by_id(&self, id: &str) -> Result<Option<TType>>;
     fn search(&self, filter: TFilter) -> Result<Vec<TType>>;
     fn update(&mut self, id: &str, item: &TType) -> Result<bool>;
-    fn delete(&self, id: &str) -> Result<bool>;
+    fn delete(&mut self, id: &str) -> Result<bool>;
 }
 
 impl Database {

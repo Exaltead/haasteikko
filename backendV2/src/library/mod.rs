@@ -23,6 +23,7 @@ pub struct LibraryFilter {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct LibraryItem {
     pub id: String,
     pub user_id: String,
@@ -37,6 +38,7 @@ pub struct LibraryItem {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct NewLibraryItem {
     pub kind: String,
     pub title: String,
@@ -45,6 +47,12 @@ pub struct NewLibraryItem {
     pub favorite: bool,
     pub activated_challenge_ids: Vec<String>,
     pub translator: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct IdResponse {
+    id: String,
 }
 
 fn map_to_internal_error(err: Box<dyn std::error::Error>) -> StatusCode {
@@ -86,10 +94,10 @@ async fn create_library_item_route(
     user: User,
     state: State<AppState>,
     Json(item): Json<NewLibraryItem>,
-) -> Result<Json<String>, StatusCode> {
+) -> Result<Json<IdResponse>, StatusCode> {
     let id = create_library_item(&user, &state, &item).map_err(map_to_internal_error)?;
 
-    Ok(Json(id))
+    Ok(Json(IdResponse { id: id }))
 }
 
 async fn update_library_item_route(

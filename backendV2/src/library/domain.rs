@@ -96,7 +96,7 @@ pub fn delete_library_item(
     state: &AppState,
     id: &str,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let db = Database::new(&state.database_path)?;
+    let mut db = Database::new(&state.database_path)?;
 
     if let Some(existing_item) = db.read_by_id(id)? {
         if existing_item.user_id != user.id {

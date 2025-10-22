@@ -84,7 +84,8 @@ async function submitModal(): Promise<void> {
         author: bookModel.value.author,
         translator: bookModel.value.translator,
         activatedChallengeIds: [],
-        favorite: false
+        favorite: false,
+        completedAt: Date.now().toLocaleString()
       }
       return newBook
     }
@@ -94,7 +95,8 @@ async function submitModal(): Promise<void> {
         title: gameModel.value.title,
         creator: gameModel.value.creator,
         activatedChallengeIds: [],
-        favorite: false
+        favorite: false,
+        completedAt: Date.now().toLocaleString()
       }
 
       return newGame

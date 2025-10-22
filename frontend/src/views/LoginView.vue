@@ -3,7 +3,6 @@ console.log("LoginView")
   import { useAuth0 } from '@auth0/auth0-vue';
 import { watch } from 'vue';
 import { useRouter } from 'vue-router';
-  console.log("useAuth0")
 
   const { loginWithRedirect, isAuthenticated, user, logout } = useAuth0();
   const router = useRouter()

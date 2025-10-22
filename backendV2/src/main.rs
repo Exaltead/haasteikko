@@ -1,14 +1,16 @@
 use axum::{
     Router,
     extract::FromRequestParts,
-    http::{StatusCode, request::Parts},
+    http::{HeaderName, StatusCode, request::Parts},
     response::{IntoResponse, Response},
     routing::get,
 };
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::auth::User;
 
 mod auth;
+mod challenge;
 mod database;
 mod library;
 mod migrations;
@@ -71,10 +73,21 @@ async fn main() {
         database_path: database_path,
     };
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers([
+            HeaderName::from_static("authorization"),
+            HeaderName::from_static("content-type"),
+        ]);
+
     let app = Router::new()
         .route("/protected", get(protected))
         .nest("/api", library::library_routes())
-        .with_state(app_state);
+        .nest("/api", challenge::routes())
+        .with_state(app_state)
+        // For local development, disallow when deploying
+        .layer(cors);
 
     let address = "0.0.0.0:3000";
     println!("Listening on http://{}", address);

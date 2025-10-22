@@ -8,10 +8,10 @@ import { useRouter } from 'vue-router';
 
 
 const router = useRouter()
-const {getAccessTokenSilently} = useAuth0()
+//const {getAccessTokenSilently} = useAuth0()
 
-const accessToken =await getAccessTokenSilently()
-console.log("Access token:", accessToken)
+//const accessToken = await getAccessTokenSilently()
+//console.log("Access token:", accessToken)
 
 function createNew() {
   showDialog.value = true
@@ -20,6 +20,7 @@ function createNew() {
 const showDialog = ref(false)
 
 function onNewItemSubmitComplete(id: string): void {
+  console.log("Hereee")
   showDialog.value = false
 
   router.push({ name: "libraryItem", params: { id } })
