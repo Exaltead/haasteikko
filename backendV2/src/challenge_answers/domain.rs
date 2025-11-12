@@ -6,10 +6,9 @@ use crate::{
     library::LibraryRepository,
 };
 use rusqlite::Result;
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct AnswerFilter<'a> {
     pub user_id: &'a str,
     pub item_id: Option<&'a str>,
@@ -32,8 +31,7 @@ impl AnswerFilter<'_> {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct Answer {
     pub id: String,
     pub question_id: String,
@@ -81,7 +79,6 @@ pub fn upsert_answers(
         .filter(|a| !current_answer_ids.contains(&a.id))
     {
         let answer = Answer {
-            id: uuid::Uuid::new_v4().to_string(),
             answered: answer.is_answered(),
             ..answer.clone()
         };
