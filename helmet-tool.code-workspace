@@ -4,13 +4,13 @@
 			"path": "frontend"
 		},
 		{
-			"path": "HelmetToolBackend"
-		},
-		{
 			"path": "infra"
 		},
 		{
 			"path": "backend"
+		},
+		{
+			"path": "backendV2"
 		}
 	],
 	"settings": {
