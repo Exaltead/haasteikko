@@ -1,7 +1,10 @@
-use crate::{challenge_answers::domain::Answer, database::{Database, Repository, query_in_transation}};
+use crate::{
+    challenge_answers::domain::Answer,
+    database::{Database, Repository, query_in_transation},
+};
 use rusqlite::{OptionalExtension, Result};
 
-use super::{domain::AnswerFilter};
+use super::domain::AnswerFilter;
 
 pub struct ChallengeAnswerRepository {
     pub db: Database,
@@ -23,7 +26,7 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
 
         let insert_count = tx.execute::<&[&dyn rusqlite::ToSql]>(
             "INSERT INTO answer (id,  question_id, challenge_id, user_id, answered, answer, kind, item_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             &[
                 &answer.id,
                 &answer.question_id,
@@ -56,12 +59,16 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
     }
 
     fn search(&mut self, filter: AnswerFilter) -> Result<Vec<Answer>> {
-        let sql = "SELECT id, question_id, challenge_id, user_id, answered, answer, kind, item_id 
+        let (conditions, params) = to_sql_params(&filter);
+        let sql = format!(
+            "SELECT id, question_id, challenge_id, user_id, answered, answer, kind, item_id 
              FROM answer 
-             WHERE user_id = ?
-             ORDER BY id";
+             WHERE {}
+             ORDER BY id",
+            conditions
+        );
         let tx = self.transaction()?;
-        let items = query_in_transation(&tx, &sql, &[&filter.user_id], row_to_answer)?;
+        let items = query_in_transation(&tx, &sql, &params, row_to_answer)?;
         Ok(items)
     }
 
@@ -115,4 +122,26 @@ fn row_to_answer(row: &rusqlite::Row) -> Result<Answer> {
         kind: row.get(6)?,
         item_id: row.get(7)?,
     })
+}
+
+fn to_sql_params<'a>(filter: &'a AnswerFilter) -> (String, Vec<&'a dyn rusqlite::ToSql>) {
+    let mut conditions = Vec::new();
+    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+
+    params.push(&filter.user_id);
+    conditions.push("user_id = ?");
+
+    if let Some(item_id) = &filter.item_id {
+        conditions.push("item_id = ?");
+        params.push(item_id);
+    }
+
+    if let Some(challenge_id) = &filter.challenge_id {
+        conditions.push("challenge_id = ?");
+        params.push(challenge_id);
+    }
+
+    let conditions = conditions.join(" AND ");
+
+    (conditions, params)
 }

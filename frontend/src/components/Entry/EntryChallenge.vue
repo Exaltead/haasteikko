@@ -20,11 +20,9 @@ const emits = defineEmits<{
 
 const answersMap = ref<Map<string, Answer>>(new Map([]))
 const questions = ref<Question[]>([])
-let answerSetId: string | undefined = undefined
 const challengeName = ref<string>("Haaste")
 async function refreshData(): Promise<void> {
-  const { id, answers } = await answerApiClient.getAnswer(props.challengeId, props.itemId)
-  answerSetId = id
+  const  answers = await answerApiClient.searchAnswers({ challengeId: props.challengeId, itemId: props.itemId})
   const challenge = (await challengeApiClient.fetchChallenges())
     .find(t => t.id === props.challengeId)
   if (challenge) {
@@ -109,13 +107,7 @@ const isSubmitting = ref(false)
 async function submit() {
   const answers: Answer[] = [...answersMap.value.values()]
   isSubmitting.value = true
-  if (!answerSetId) {
-    await answerApiClient.addAnswer(answers, props.challengeId, props.itemId)
-
-  }
-  else {
-    await answerApiClient.updateAnswer(answerSetId, answers, props.challengeId, props.itemId)
-  }
+  await answerApiClient.upsertAnswers(answers, props.challengeId, props.itemId)
   isSubmitting.value = false
 
   emits('submit', [...answersMap.value.values()])

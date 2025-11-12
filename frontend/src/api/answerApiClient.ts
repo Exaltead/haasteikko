@@ -1,60 +1,40 @@
 import { answerSchema, type Answer } from "@/models/challenge"
-import { z } from "zod"
-import { BaseApiClient } from "./baseApiClient"
 import type { HttpProxy } from "./HttpProxy"
 import { useHttpApi } from "@/plugins/HttpPlugin"
+import z from "zod"
 
-const answerSetSchema = z.object({
-  id: z.string().uuid(),
-  challengeId: z.string(),
-  itemId: z.string(),
-  answers: answerSchema.array(),
-})
+//TODO: move the api url to the http proxy, maybe
+const API_URL = import.meta.env.VITE_API_URL
 
-const newAnswerSetSchema = z.object({
-  challengeId: z.string(),
-  itemId: z.string(),
-  answers: answerSchema.array(),
-})
+class AnswerApiClient {
+  constructor(private proxy: HttpProxy) {}
 
-type AnswerSet = z.infer<typeof answerSetSchema>
-
-class AnswerApiClient extends BaseApiClient<typeof answerSetSchema, typeof newAnswerSetSchema> {
-  constructor(proxy: HttpProxy) {
-    super(answerSetSchema, newAnswerSetSchema, "answer", proxy)
-  }
-
-  async getAnswer(
-    challengeId: string,
-    itemId: string,
-  ): Promise<{ id?: string | undefined; answers: Answer[] }> {
-    const results = await this.fetchEntities(new URLSearchParams({ challengeId, itemId }))
-    if (results.length === 0) {
-      return { answers: [] }
+  async searchAnswers(query: { challengeId?: string; itemId?: string }): Promise<Answer[]> {
+    const params = new URLSearchParams()
+    if (query.challengeId) {
+      params.append("challengeId", query.challengeId)
     }
-    if (results.length !== 1) {
-      throw new Error("Invalid answer data")
+    if (query.itemId) {
+      params.append("itemId", query.itemId)
     }
-    const { id, answers } = results[0]
-    return { id, answers }
+
+    const res = await this.proxy.get(
+      `${API_URL}/answers`,
+      params,
+      z.object({ answers: answerSchema.array() }),
+    )
+
+    return res.answers
   }
 
-  async getChallengeAnswers(challengeId: string): Promise<Answer[]> {
-    const results = await this.fetchEntities(new URLSearchParams({ challengeId }))
-    return results.flatMap((t) => t.answers)
-  }
+  async upsertAnswers(answers: Answer[], challengeId: string, itemId: string): Promise<Answer[]> {
+    const result = await this.proxy.post(
+      `${API_URL}/answers/${itemId}/${challengeId}`,
+      { answers },
+      z.object({ answers: answerSchema.array() }),
+    )
 
-  async addAnswer(answers: Answer[], challengeId: string, itemId: string): Promise<string> {
-    return this.addEntity({ challengeId, itemId, answers })
-  }
-
-  async updateAnswer(
-    id: string,
-    answers: Answer[],
-    challengeId: string,
-    itemId: string,
-  ): Promise<void> {
-    return this.updateEntity(id, { id, challengeId, itemId, answers })
+    return result.answers
   }
 }
 

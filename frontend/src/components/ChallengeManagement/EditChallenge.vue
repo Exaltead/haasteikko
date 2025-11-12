@@ -94,7 +94,7 @@ async function submit() {
 }
 
 const canSubmit = computed(() => {
-  return isSubmitting.value && editTarget.value.name.length > 0 && editTarget.value.questions.length > 0
+  return !isSubmitting.value && editTarget.value.name.length > 0 && editTarget.value.questions.length > 0
 })
 
 </script>

@@ -12,6 +12,7 @@ use std::collections::HashSet;
 pub struct AnswerFilter<'a> {
     pub user_id: &'a str,
     pub item_id: Option<&'a str>,
+    pub challenge_id: Option<&'a str>,
 }
 
 impl AnswerFilter<'_> {
@@ -19,12 +20,20 @@ impl AnswerFilter<'_> {
         AnswerFilter {
             user_id,
             item_id: None,
+            challenge_id: None,
         }
     }
 
     pub fn with_item_id<'a>(&'a self, item_id: &'a str) -> AnswerFilter<'a> {
         let new = AnswerFilter {
             item_id: Some(item_id),
+            ..self.clone()
+        };
+        new
+    }
+    pub fn with_challenge_id<'a>(&'a self, challenge_id: &'a str) -> AnswerFilter<'a> {
+        let new = AnswerFilter {
+            challenge_id: Some(challenge_id),
             ..self.clone()
         };
         new
@@ -57,6 +66,7 @@ pub fn upsert_answers(
     user: &User,
     state: &AppState,
     item_id: &str,
+    challenge_id: &str,
     answer_set: &[Answer],
 ) -> Result<Vec<Answer>> {
     let db = Database::new(&state.database_path)?;
@@ -70,7 +80,11 @@ pub fn upsert_answers(
         return Err(rusqlite::Error::QueryReturnedNoRows); // Item not found
     }
 
-    let current_answers = repo.search(AnswerFilter::new(&user.id).with_item_id(&item_id))?;
+    let current_answers = repo.search(
+        AnswerFilter::new(&user.id)
+            .with_item_id(&item_id)
+            .with_challenge_id(&challenge_id),
+    )?;
 
     let current_answer_ids: HashSet<String> = current_answers.into_iter().map(|a| a.id).collect();
 
@@ -103,5 +117,6 @@ pub fn upsert_answers(
 pub fn get_challenge_answers(database_path: &str, filter: AnswerFilter) -> Result<Vec<Answer>> {
     let db = Database::new(database_path)?;
     let mut repo = ChallengeAnswerRepository::new(db);
+
     repo.search(filter)
 }

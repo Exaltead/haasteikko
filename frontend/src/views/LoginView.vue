@@ -1,30 +1,35 @@
 <script lang="ts" setup>
-console.log("LoginView")
-  import { useAuth0 } from '@auth0/auth0-vue';
+
+import { useAuth0 } from '@auth0/auth0-vue';
 import { watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-  const { loginWithRedirect, isAuthenticated, user, logout } = useAuth0();
-  const router = useRouter()
 
-  watch(isAuthenticated, (newValue) => {
-    if(newValue){
-      console.log("Now authenticated, redirecting to /home")
-      router.push({ name: 'home'})
+
+const { loginWithRedirect, isAuthenticated, user, logout } = useAuth0();
+const router = useRouter()
+
+if(isAuthenticated.value){
+  router.push({ name: 'home'})
+}
+
+watch(isAuthenticated, (newValue) => {
+  if(newValue){
+    router.push({ name: 'home'})
+  }
+});
+
+function login() {
+  loginWithRedirect()
+}
+
+function doLogout(){
+  logout({
+    logoutParams: {
+      returnTo: window.location.origin
     }
-  });
-
-  function login() {
-    loginWithRedirect()
-  }
-
-  function doLogout(){
-    logout({
-      logoutParams: {
-        returnTo: window.location.origin
-      }
-    })
-  }
+  })
+}
 
 </script>
 <template>

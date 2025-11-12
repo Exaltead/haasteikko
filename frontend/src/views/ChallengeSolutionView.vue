@@ -96,7 +96,7 @@ async function loadData() {
 
   // Loads answers
   const loadAnswers = async () => {
-    const answers = await answerApiClient.getChallengeAnswers(challengeId)
+    const answers = await answerApiClient.searchAnswers({ challengeId})
     allAnswers.value = answers.filter(t => {
       return t.answered === true
     })
@@ -202,9 +202,6 @@ const questionToAnswersMap = computed(() => {
 
   return mapping.sort((a, b) => a.question.number - b.question.number)
 })
-
-
-
 
 
 </script>

@@ -26,6 +26,7 @@ pub struct SharedChallenge {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NewSharedChallenge {
     pub name: String,
     pub status: String,
