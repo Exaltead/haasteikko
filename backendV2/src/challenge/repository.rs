@@ -1,6 +1,6 @@
-use rusqlite::{OptionalExtension, Transaction};
+use rusqlite::Transaction;
 
-use crate::challenge::{self, Question, SharedChallenge};
+use crate::challenge::{Question, SharedChallenge};
 use crate::database::{Database, Repository, query_in_transation, query_singe_in_transation};
 
 #[derive(Default)]

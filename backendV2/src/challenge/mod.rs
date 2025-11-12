@@ -1,16 +1,3 @@
-use crate::{
-    AppState,
-    auth::User,
-    challenge::domain::{
-        create_challenge, delete_challenge, get_challenge_by_id, get_challenges, update_challenge,
-    },
-};
-use axum::{
-    Json, Router,
-    extract::{Path, State},
-    http::StatusCode,
-    routing::{delete, get, post, put},
-};
 use serde::{Deserialize, Serialize};
 
 mod api;

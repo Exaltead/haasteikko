@@ -1,4 +1,4 @@
-use crate::database::{Database, Repository, query_in_transation};
+use crate::database::{Repository, query_in_transation};
 use crate::library::{LibraryFilter, LibraryItem, LibraryRepository};
 use rusqlite::{OptionalExtension, Result};
 
