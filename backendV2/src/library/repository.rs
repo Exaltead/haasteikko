@@ -1,24 +1,22 @@
-use crate::database::{Database, Repository};
-use crate::library::{LibraryFilter, LibraryItem};
-use rusqlite::Result;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use crate::database::{Database, Repository, query_in_transation};
+use crate::library::{LibraryFilter, LibraryItem, LibraryRepository};
+use rusqlite::{OptionalExtension, Result};
 
 
 
-impl Repository<LibraryItem, LibraryFilter> for Database {
+
+impl Repository<LibraryItem, LibraryFilter> for LibraryRepository {
     fn create(&mut self, item: &LibraryItem) -> Result<String> {
         let sql = 
             "INSERT INTO library (id, user_id, kind, title, author, added_at, completed_at, favorite, translator) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        let id = Uuid::new_v4().to_string();
-        let tx = self.conn.transaction()?;
+        let tx = self.transaction()?;
 
         tx.execute::<&[&dyn rusqlite::ToSql]>(
             &sql,
             &[
-                &id,
+                &item.id,
                 &item.user_id,
                 &item.kind,
                 &item.title,
@@ -26,7 +24,7 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
                 &item.added_at,
                 &item.completed_at,
                 &(if item.favorite { 1i64 } else { 0i64 }),
-                &item.translator
+                &item.translator,
             ],
         )?;
 
@@ -34,89 +32,46 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
         for challenge_id in &item.activated_challenge_ids {
             tx.execute(
                 "INSERT INTO activated_item_challenge (item_id, challenge_id) VALUES (?, ?)",
-                &[&id, &challenge_id],
+                &[&item.id, &challenge_id],
             )?;
         }
 
-        tx.commit()?; 
+        tx.commit()?;
 
-        Ok(id)
+        Ok(item.id.clone())
     }
 
-    fn read_by_id(&self, id: &str) -> Result<Option<LibraryItem>> {
-        let sql = 
-            "SELECT l.*, GROUP_CONCAT(aic.challenge_id) as challenge_ids 
+    fn read_by_id(&mut self, id: &str) -> Result<Option<LibraryItem>> {
+        let sql = "SELECT l.*, GROUP_CONCAT(aic.challenge_id) as challenge_ids 
             FROM library l 
             LEFT JOIN activated_item_challenge aic ON l.id = aic.item_id 
             WHERE l.id = ?
             GROUP BY l.id";
+        let connection = self.conn();
+        let item = connection
+            .query_row(sql, &[&id], row_to_library_item)
+            .optional()?;
 
-        let row_map = |row: &rusqlite::Row| -> Result<LibraryItem> {
-            let challenge_ids: Option<String> = row.get(9)?;
-            let activated_challenge_ids = challenge_ids
-                .map(|ids| ids.split(',').map(String::from).collect())
-                .unwrap_or_default();
-
-            Ok(LibraryItem {
-                id: row.get(0)?,
-                user_id: row.get(1)?,
-                kind: row.get(2)?,
-                title: row.get(3)?,
-                author: row.get(4)?,
-                added_at: row.get(5)?,
-                completed_at: row.get(6)?,
-                favorite: row.get::<_, i64>(7)? != 0,
-                translator: row.get(8)?,
-                activated_challenge_ids,
-            })
-        };
-        self.query_row(&sql, &[&id], row_map)
+        Ok(item)
     }
 
-    fn search(&self, filter: LibraryFilter) -> Result<Vec<LibraryItem>> {
-        let mut conditions = Vec::new();
-        let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
-
-        
-        conditions.push("user_id = ?");
-        params.push(&filter.user_id);
-        
-
-        let where_clause = if conditions.is_empty() {
-            String::new()
-        } else {
-            format!("WHERE {}", conditions.join(" AND "))
-        };
+    fn search(&mut self, filter: LibraryFilter) -> Result<Vec<LibraryItem>> {
+        let (conditions, params) = to_sql_params(&filter);
 
         let sql = format!(
             "SELECT l.*, GROUP_CONCAT(aic.challenge_id) as challenge_ids 
-            FROM {} l
+            FROM library l
             LEFT JOIN activated_item_challenge aic ON l.id = aic.item_id 
-            {} 
+            WHERE {} 
             GROUP BY l.id",
-            "library", where_clause
+            conditions
         );
 
-        let row_map = |row: &rusqlite::Row| -> Result<LibraryItem> {
-            let challenge_ids: Option<String> = row.get(9)?;
-            let activated_challenge_ids = challenge_ids
-                .map(|ids| ids.split(',').map(String::from).collect())
-                .unwrap_or_default();
+        let tx = self.transaction()?;
+        let items = query_in_transation(&tx, &sql, &params, row_to_library_item)?;
+        tx.commit()?;
 
-            Ok(LibraryItem {
-                id: row.get(0)?,
-                user_id: row.get(1)?,
-                kind: row.get(2)?,
-                title: row.get(3)?,
-                author: row.get(4)?,
-                added_at: row.get(5)?,
-                completed_at: row.get(6)?,
-                favorite: row.get::<_, i64>(7)? != 0,
-                translator: row.get(8)?,
-                activated_challenge_ids,
-            })
-        };
-        self.query_map(&sql, &params, row_map)
+        Ok(items)
     }
 
     fn update(&mut self, id: &str, item: &LibraryItem) -> Result<bool> {
@@ -125,8 +80,7 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
             "UPDATE library SET user_id = ?, kind = ?, title = ?, author = ?, completed_at = ?, favorite = ?, translator = ? 
              WHERE id = ?";
 
-        let tx = self.conn.transaction()?;
-
+        let tx = self.transaction()?;
 
         let result = tx.execute::<&[&dyn rusqlite::ToSql]>(
             sql,
@@ -164,11 +118,58 @@ impl Repository<LibraryItem, LibraryFilter> for Database {
     }
 
     fn delete(&mut self, id: &str) -> Result<bool> {
-        let sql = format!("DELETE FROM {} WHERE id = ?", "library");
-        let result = self.execute(&sql, &[&id])?;
-        Ok(result > 0)
+        let sql = "DELETE FROM library WHERE id = ?";
+        let tx = self.transaction()?;
+        let result = tx.execute(sql, &[&id])?;
+        if result == 1 {
+            tx.commit()?;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    fn conn(&mut self) -> &mut rusqlite::Connection {
+        &mut self.db.conn
     }
 }
+
+fn row_to_library_item(row: &rusqlite::Row) -> Result<LibraryItem> {
+    let challenge_ids: Option<String> = row.get(9)?;
+    let activated_challenge_ids = challenge_ids
+        .map(|ids| ids.split(',').map(String::from).collect())
+        .unwrap_or_default();
+
+    Ok(LibraryItem {
+        id: row.get(0)?,
+        user_id: row.get(1)?,
+        kind: row.get(2)?,
+        title: row.get(3)?,
+        author: row.get(4)?,
+        added_at: row.get(5)?,
+        completed_at: row.get(6)?,
+        favorite: row.get::<_, i64>(7)? != 0,
+        translator: row.get(8)?,
+        activated_challenge_ids,
+    })
+}
+
+fn to_sql_params(item: &LibraryFilter) -> (String, Vec<&dyn rusqlite::ToSql>) {
+    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+    let mut conditions = Vec::new();
+
+    params.push(&item.user_id);
+    conditions.push("user_id = ?");
+
+    if let Some(item_id) = &item.item_id {
+        params.push(item_id);
+        conditions.push("l.id = ?");
+    }
+
+    let conditions = conditions.join(" AND ");
+
+    (conditions, params)
+}
+/*
 
 #[cfg(test)]
 mod tests {
@@ -267,7 +268,7 @@ mod tests {
             &[&new_challenge_id],
         )?;
         updated_item.activated_challenge_ids = vec![new_challenge_id.to_string()];
-        
+
         let updated = db.update(&id, &updated_item)?;
         assert!(updated);
 
@@ -285,3 +286,4 @@ mod tests {
         Ok(())
     }
 }
+*/

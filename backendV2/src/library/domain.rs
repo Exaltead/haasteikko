@@ -2,7 +2,7 @@ use crate::{
     AppState,
     auth::User,
     database::{Database, Repository},
-    library::{LibraryFilter, LibraryItem, NewLibraryItem},
+    library::{LibraryFilter, LibraryItem, LibraryRepository, NewLibraryItem},
 };
 
 pub fn get_library_items(
@@ -10,11 +10,13 @@ pub fn get_library_items(
     state: &AppState,
 ) -> Result<Vec<LibraryItem>, Box<dyn std::error::Error>> {
     let db = Database::new(&state.database_path)?;
+    let mut repo = LibraryRepository::new(db);
     let filter = LibraryFilter {
         user_id: user.id.clone(),
+        item_id: None,
     };
 
-    let items = db.search(filter)?;
+    let items = repo.search(filter)?;
     Ok(items)
 }
 
@@ -24,7 +26,8 @@ pub fn get_library_item_by_id(
     id: &str,
 ) -> Result<Option<LibraryItem>, Box<dyn std::error::Error>> {
     let db = Database::new(&state.database_path)?;
-    if let Some(item) = db.read_by_id(id)? {
+    let mut repo = LibraryRepository::new(db);
+    if let Some(item) = repo.read_by_id(id)? {
         if item.user_id == user.id {
             Ok(Some(item))
         } else {
@@ -40,7 +43,8 @@ pub fn create_library_item(
     state: &AppState,
     item: &NewLibraryItem,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let mut db = Database::new(&state.database_path)?;
+    let db = Database::new(&state.database_path)?;
+    let mut repo = LibraryRepository::new(db);
     let item = LibraryItem {
         id: uuid::Uuid::new_v4().to_string(),
         user_id: user.id.clone(),
@@ -53,7 +57,7 @@ pub fn create_library_item(
         activated_challenge_ids: item.activated_challenge_ids.clone(),
         translator: item.translator.clone(),
     };
-    let id = db.create(&item)?;
+    let id = repo.create(&item)?;
     Ok(id)
 }
 
@@ -63,9 +67,10 @@ pub fn update_library_item(
     id: &str,
     item: &NewLibraryItem,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let mut db = Database::new(&state.database_path)?;
+    let db = Database::new(&state.database_path)?;
+    let mut repo = LibraryRepository::new(db);
     println!("Updating item with id: {} for user {}", id, user.id);
-    if let Some(existing_item) = db.read_by_id(id)? {
+    if let Some(existing_item) = repo.read_by_id(id)? {
         if existing_item.user_id != user.id {
             println!("User ID mismatch: {} vs {}", existing_item.user_id, user.id);
             return Ok(false);
@@ -87,7 +92,7 @@ pub fn update_library_item(
         translator: item.translator.clone(),
     };
 
-    let updated = db.update(id, &item)?;
+    let updated = repo.update(id, &item)?;
     Ok(updated)
 }
 
@@ -96,9 +101,10 @@ pub fn delete_library_item(
     state: &AppState,
     id: &str,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let mut db = Database::new(&state.database_path)?;
+    let db = Database::new(&state.database_path)?;
+    let mut repo = LibraryRepository::new(db);
 
-    if let Some(existing_item) = db.read_by_id(id)? {
+    if let Some(existing_item) = repo.read_by_id(id)? {
         if existing_item.user_id != user.id {
             return Ok(false);
         }
@@ -106,6 +112,6 @@ pub fn delete_library_item(
         return Ok(false);
     }
 
-    let deleted = db.delete(id)?;
+    let deleted = repo.delete(id)?;
     Ok(deleted)
 }

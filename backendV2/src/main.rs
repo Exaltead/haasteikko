@@ -11,9 +11,11 @@ use crate::auth::User;
 
 mod auth;
 mod challenge;
+mod challenge_answers;
 mod database;
 mod library;
 mod migrations;
+mod utils;
 
 #[derive(Clone)]
 struct AppState {
@@ -85,6 +87,7 @@ async fn main() {
         .route("/protected", get(protected))
         .nest("/api", library::library_routes())
         .nest("/api", challenge::routes())
+        .nest("/api", challenge_answers::routes())
         .with_state(app_state)
         // For local development, disallow when deploying
         .layer(cors);

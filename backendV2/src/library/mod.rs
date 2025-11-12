@@ -1,10 +1,12 @@
 use crate::{
     AppState,
     auth::User,
+    database::Database,
     library::domain::{
         create_library_item, delete_library_item, get_library_item_by_id, get_library_items,
         update_library_item,
     },
+    utils::map_to_internal_error,
 };
 use axum::{
     Json, Router,
@@ -20,6 +22,7 @@ mod repository;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryFilter {
     pub user_id: String,
+    pub item_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -49,15 +52,20 @@ pub struct NewLibraryItem {
     pub translator: Option<String>,
 }
 
+pub struct LibraryRepository {
+    db: Database,
+}
+
+impl LibraryRepository {
+    pub fn new(db: Database) -> Self {
+        LibraryRepository { db }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 struct IdResponse {
     id: String,
-}
-
-fn map_to_internal_error(err: Box<dyn std::error::Error>) -> StatusCode {
-    println!("Internal error: {}", err);
-    StatusCode::INTERNAL_SERVER_ERROR
 }
 
 pub fn library_routes() -> Router<AppState> {

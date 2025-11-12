@@ -1,7 +1,7 @@
-use rusqlite::OptionalExtension;
+use rusqlite::{OptionalExtension, Transaction};
 
-use crate::challenge::{Question, SharedChallenge};
-use crate::database::{Database, Repository};
+use crate::challenge::{self, Question, SharedChallenge};
+use crate::database::{Database, Repository, query_in_transation, query_singe_in_transation};
 
 #[derive(Default)]
 pub struct ChallengeFilter;
@@ -12,18 +12,14 @@ pub struct ChallengeRepository {
 
 impl ChallengeRepository {
     pub fn new(db: Database) -> Self {
-        Self { db }
-    }
-    fn conn(&self) -> &rusqlite::Connection {
-        &self.db.conn
-    }
-
-    fn transaction(&mut self) -> rusqlite::Result<rusqlite::Transaction<'_>> {
-        self.db.conn.transaction()
+        ChallengeRepository { db }
     }
 }
 
 impl Repository<SharedChallenge, ChallengeFilter> for ChallengeRepository {
+    fn conn(&mut self) -> &mut rusqlite::Connection {
+        &mut self.db.conn
+    }
     fn create(&mut self, challenge: &SharedChallenge) -> rusqlite::Result<String> {
         let tx = self.transaction()?;
 
@@ -57,91 +53,39 @@ impl Repository<SharedChallenge, ChallengeFilter> for ChallengeRepository {
         Ok(challenge.id.clone())
     }
 
-    fn read_by_id(&self, id: &str) -> rusqlite::Result<Option<SharedChallenge>> {
-        let mut stmt = self
-            .conn()
-            .prepare("SELECT id, name, status, target_media, kind FROM challenge WHERE id = ?1")?;
+    fn read_by_id(&mut self, id: &str) -> rusqlite::Result<Option<SharedChallenge>> {
+        let transaction = self.transaction()?;
 
-        let challenge = stmt
-            .query_row(rusqlite::params![id], |row| {
-                Ok(SharedChallenge {
-                    id: row.get(0)?,
-                    name: row.get(1)?,
-                    status: row.get(2)?,
-                    target_media: row.get(3)?,
-                    kind: row.get(4)?,
-                    questions: Vec::new(), // Will be populated below
-                })
-            })
-            .optional()?;
+        let query = "SELECT id, name, status, target_media, kind FROM challenge WHERE id = ?1";
+        let params = rusqlite::params![id];
+        let challenge = query_singe_in_transation(&transaction, query, params, challenge_from_row)?;
 
-        if let Some(mut challenge) = challenge {
-            let mut stmt = self.conn().prepare(
-                "SELECT id, kind, question, number, question_cluster_size 
-                 FROM question WHERE challenge_id = ?1",
-            )?;
-
-            let questions = stmt
-                .query_map(rusqlite::params![id], |row| {
-                    Ok(Question {
-                        id: row.get(0)?,
-                        kind: row.get(1)?,
-                        question: row.get(2)?,
-                        number: row.get(3)?,
-                        question_cluster_size: row.get(4)?,
-                    })
-                })?
-                .collect::<rusqlite::Result<Vec<_>>>()?;
-
-            challenge.questions = questions;
-            Ok(Some(challenge))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn search(&self, _filter: ChallengeFilter) -> rusqlite::Result<Vec<SharedChallenge>> {
-        let mut stmt = self
-            .conn()
-            .prepare("SELECT id, name, status, target_media, kind FROM challenge")?;
-
-        let challenges = stmt
-            .query_map([], |row| {
-                Ok(SharedChallenge {
-                    id: row.get(0)?,
-                    name: row.get(1)?,
-                    status: row.get(2)?,
-                    target_media: row.get(3)?,
-                    kind: row.get(4)?,
-                    questions: Vec::new(), // Will be populated below
-                })
-            })?
-            .collect::<rusqlite::Result<Vec<_>>>()?;
-
-        let mut result = Vec::new();
-        for mut challenge in challenges {
-            let mut stmt = self.conn().prepare(
-                "SELECT id, kind, question, number, question_cluster_size 
-                 FROM question WHERE challenge_id = ?1",
-            )?;
-
-            let questions = stmt
-                .query_map(rusqlite::params![challenge.id], |row| {
-                    Ok(Question {
-                        id: row.get(0)?,
-                        kind: row.get(1)?,
-                        question: row.get(2)?,
-                        number: row.get(3)?,
-                        question_cluster_size: row.get(4)?,
-                    })
-                })?
-                .collect::<rusqlite::Result<Vec<_>>>()?;
-
-            challenge.questions = questions;
-            result.push(challenge);
-        }
+        let result = match challenge {
+            Some(mut challenge) => {
+                let questions = read_questions_for_challenge_id(&transaction, id)?;
+                challenge.questions = questions;
+                Some(challenge)
+            }
+            None => None,
+        };
+        transaction.commit()?;
 
         Ok(result)
+    }
+
+    fn search(&mut self, _filter: ChallengeFilter) -> rusqlite::Result<Vec<SharedChallenge>> {
+        let transaction = self.transaction()?;
+        let query = "SELECT id, name, status, target_media, kind FROM challenge";
+        let params: &[&dyn rusqlite::ToSql] = &[];
+
+        let mut challenges = query_in_transation(&transaction, query, params, challenge_from_row)?;
+
+        for challenge in &mut challenges {
+            let questions = read_questions_for_challenge_id(&transaction, &challenge.id)?;
+            challenge.questions = questions;
+        }
+
+        Ok(challenges)
     }
 
     fn update(&mut self, id: &str, challenge: &SharedChallenge) -> rusqlite::Result<bool> {
@@ -192,4 +136,35 @@ impl Repository<SharedChallenge, ChallengeFilter> for ChallengeRepository {
         tx.commit()?;
         Ok(rows_affected > 0)
     }
+}
+
+fn challenge_from_row(row: &rusqlite::Row) -> rusqlite::Result<SharedChallenge> {
+    Ok(SharedChallenge {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        status: row.get(2)?,
+        target_media: row.get(3)?,
+        kind: row.get(4)?,
+        questions: Vec::new(), // Will be populated separately
+    })
+}
+
+fn read_questions_for_challenge_id(
+    tx: &Transaction,
+    challenge_id: &str,
+) -> rusqlite::Result<Vec<Question>> {
+    let query = "SELECT id, kind, question, number, question_cluster_size 
+                     FROM question WHERE challenge_id = ?1";
+
+    let questions = query_in_transation(&tx, query, rusqlite::params![challenge_id], |row| {
+        Ok(Question {
+            id: row.get(0)?,
+            kind: row.get(1)?,
+            question: row.get(2)?,
+            number: row.get(3)?,
+            question_cluster_size: row.get(4)?,
+        })
+    })?;
+
+    Ok(questions)
 }
