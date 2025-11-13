@@ -1,8 +1,6 @@
 use axum::{
     Router,
-    extract::FromRequestParts,
-    http::{HeaderName, StatusCode, request::Parts},
-    response::{IntoResponse, Response},
+    http::HeaderName,
     routing::get,
 };
 use tower_http::cors::{Any, CorsLayer};

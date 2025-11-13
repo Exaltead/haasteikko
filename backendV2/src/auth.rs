@@ -4,11 +4,9 @@ use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 
 use axum::{
-    Router,
     extract::FromRequestParts,
-    http::{HeaderName, StatusCode, request::Parts},
+    http::{StatusCode, request::Parts},
     response::{IntoResponse, Response},
-    routing::get,
 };
 use uuid::Uuid;
 
