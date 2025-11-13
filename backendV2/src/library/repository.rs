@@ -2,12 +2,9 @@ use crate::database::{Repository, query_in_transation};
 use crate::library::{LibraryFilter, LibraryItem, LibraryRepository};
 use rusqlite::{OptionalExtension, Result};
 
-
-
-
 impl Repository<LibraryItem, LibraryFilter> for LibraryRepository {
     fn create(&mut self, item: &LibraryItem) -> Result<String> {
-        let sql = 
+        let sql =
             "INSERT INTO library (id, user_id, kind, title, author, added_at, completed_at, favorite, translator) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -76,7 +73,7 @@ impl Repository<LibraryItem, LibraryFilter> for LibraryRepository {
 
     fn update(&mut self, id: &str, item: &LibraryItem) -> Result<bool> {
         // Update the main library item
-        let sql = 
+        let sql =
             "UPDATE library SET user_id = ?, kind = ?, title = ?, author = ?, completed_at = ?, favorite = ?, translator = ? 
              WHERE id = ?";
 

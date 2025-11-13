@@ -6,7 +6,16 @@ use axum::{
 };
 
 use crate::{
-    AppState, auth::User, challenge::{NewSharedChallenge, SharedChallenge, domain::{create_challenge, delete_challenge, get_challenge_by_id, get_challenges, update_challenge}}, utils::map_to_internal_error
+    AppState,
+    auth::User,
+    challenge::{
+        NewSharedChallenge, SharedChallenge,
+        domain::{
+            create_challenge, delete_challenge, get_challenge_by_id, get_challenges,
+            update_challenge,
+        },
+    },
+    utils::map_to_internal_error,
 };
 
 pub fn routes() -> Router<AppState> {
@@ -20,7 +29,7 @@ pub fn routes() -> Router<AppState> {
 
 async fn get_all_challenges(
     State(state): State<AppState>,
-    _user: User
+    _user: User,
 ) -> Result<Json<Vec<SharedChallenge>>, StatusCode> {
     match get_challenges(&state) {
         Ok(items) => Ok(Json(items)),
@@ -31,7 +40,7 @@ async fn get_all_challenges(
 async fn get_challenge(
     State(state): State<AppState>,
     Path(id): Path<String>,
-    _user: User
+    _user: User,
 ) -> Result<Json<SharedChallenge>, StatusCode> {
     match get_challenge_by_id(&state, &id) {
         Ok(Some(item)) => Ok(Json(item)),

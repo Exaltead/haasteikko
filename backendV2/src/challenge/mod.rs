@@ -25,8 +25,6 @@ pub struct SharedChallenge {
     pub kind: String,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewSharedChallenge {
@@ -37,4 +35,4 @@ pub struct NewSharedChallenge {
 }
 
 pub use api::routes;
-pub use repository::{ChallengeRepository, ChallengeFilter};
+pub use repository::{ChallengeFilter, ChallengeRepository};

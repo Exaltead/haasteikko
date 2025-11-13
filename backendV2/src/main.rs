@@ -25,33 +25,6 @@ struct AppState {
     database_path: String,
 }
 
-impl FromRequestParts<AppState> for User {
-    type Rejection = Response;
-
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &AppState,
-    ) -> Result<Self, Self::Rejection> {
-        let token = parts
-            .headers
-            .get("Authorization")
-            .and_then(|h| h.to_str().ok())
-            .and_then(|s| s.strip_prefix("Bearer "))
-            .ok_or_else(|| {
-                (
-                    StatusCode::UNAUTHORIZED,
-                    "Missing or invalid Authorization header",
-                )
-                    .into_response()
-            })?;
-
-        return match auth::validate_jwt(token, &state.jwks, &state.required_audience) {
-            Ok(c) => Ok(c),
-            Err(e) => Err((StatusCode::UNAUTHORIZED, e.to_string()).into_response()),
-        };
-    }
-}
-
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
