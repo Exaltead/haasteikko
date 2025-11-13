@@ -1,6 +1,7 @@
 use crate::{
     AppState,
     auth::User,
+    challenge::{ChallengeFilter, ChallengeRepository},
     database::{Database, Repository},
     library::{LibraryFilter, LibraryItem, LibraryRepository, NewLibraryItem},
 };
@@ -44,7 +45,17 @@ pub fn create_library_item(
     item: &NewLibraryItem,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let db = Database::new(&state.database_path)?;
+    // Should maybe reuse the same connection
+    let mut challenge_repo = ChallengeRepository::new(Database::new(&state.database_path)?);
+    let challenges = challenge_repo.search(ChallengeFilter {
+        status: Some("active".to_string()),
+        media_type: Some(item.kind.to_string()),
+    })?;
+
+    let activated_challenges = challenges.iter().map(|f| f.id.clone()).collect();
+
     let mut repo = LibraryRepository::new(db);
+
     let item = LibraryItem {
         id: uuid::Uuid::new_v4().to_string(),
         user_id: user.id.clone(),
@@ -54,7 +65,7 @@ pub fn create_library_item(
         added_at: chrono::Utc::now().to_rfc3339(),
         completed_at: item.completed_at.clone(),
         favorite: item.favorite,
-        activated_challenge_ids: item.activated_challenge_ids.clone(),
+        activated_challenge_ids: activated_challenges,
         translator: item.translator.clone(),
     };
     let id = repo.create(&item)?;
@@ -69,7 +80,6 @@ pub fn update_library_item(
 ) -> Result<bool, Box<dyn std::error::Error>> {
     let db = Database::new(&state.database_path)?;
     let mut repo = LibraryRepository::new(db);
-    println!("Updating item with id: {} for user {}", id, user.id);
     if let Some(existing_item) = repo.read_by_id(id)? {
         if existing_item.user_id != user.id {
             println!("User ID mismatch: {} vs {}", existing_item.user_id, user.id);

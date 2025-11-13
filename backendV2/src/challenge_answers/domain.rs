@@ -69,6 +69,7 @@ pub fn upsert_answers(
     challenge_id: &str,
     answer_set: &[Answer],
 ) -> Result<Vec<Answer>> {
+    // These should most likely use the same db
     let db = Database::new(&state.database_path)?;
     let mut repo = ChallengeAnswerRepository::new(db);
     let mut library_repo = LibraryRepository::new(Database::new(&state.database_path)?);

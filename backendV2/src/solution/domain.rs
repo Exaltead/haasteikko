@@ -59,7 +59,6 @@ pub fn upsert_solutions(
         .map(|s| {
             let single_answer = s.single_answer_item_id.clone().filter(|a| !a.is_empty());
             let multi_answer = s.multiple_answer_item_ids.clone().filter(|a| a.len() > 0);
-            println!("Adding {:?}", s);
             QuestionSolution {
                 single_answer_item_id: single_answer,
                 multiple_answer_item_ids: multi_answer,

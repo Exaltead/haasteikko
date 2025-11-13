@@ -13,7 +13,7 @@ pub fn get_challenges(
 ) -> Result<Vec<SharedChallenge>, Box<dyn std::error::Error>> {
     let db = Database::new(&state.database_path)?;
     let mut repo = ChallengeRepository::new(db);
-    Ok(repo.search(ChallengeFilter::default())?)
+    Ok(repo.search(ChallengeFilter::new())?)
 }
 
 pub fn get_challenge_by_id(
