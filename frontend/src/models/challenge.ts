@@ -30,22 +30,25 @@ export const challengeSchema = z.object({
   status: z.enum(["active", "inactive"]),
   targetMedia: z.enum(["Book", "Game"]),
   questions: questionSchema.array(),
-  kind: z.string()
+  kind: z.string(),
 })
 export type Challenge = z.infer<typeof challengeSchema>
 
+export const solutionTypeSchema = z.enum(["SinglePartSolution", "MultiPartSolution"])
+
 export const solutionSchema = z.object({
+  kind: solutionTypeSchema,
   questionId: z.string(),
-  singleAnswerItemId: z.string(),
-  multipleAnswerItemIds: z.string().array(),
+  singleAnswerItemId: z
+    .string()
+    .nullish()
+    .transform((t) => t ?? undefined),
+  multipleAnswerItemIds: z
+    .string()
+    .array()
+    .nullish()
+    .transform((t) => t ?? [])
+    .default([]),
 })
 
 export type Solution = z.infer<typeof solutionSchema>
-
-export const solutionSetSchema = z.object({
-  id: z.string().uuid(),
-  challengeId: z.string().uuid(),
-  solutions: solutionSchema.array(),
-})
-
-export type SolutionSet = z.infer<typeof solutionSetSchema>

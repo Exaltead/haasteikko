@@ -50,5 +50,11 @@ CREATE TABLE IF NOT EXISTS question_solution (
     challenge_id TEXT NOT NULL REFERENCES challenge(id) ON DELETE CASCADE,
     question_id TEXT NOT NULL REFERENCES question(id) ON DELETE CASCADE,
     kind TEXT NOT NULL,
-    solution TEXT NOT NULL
+    single_answer_item_id TEXT REFERENCES library(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS multipart_solution (
+    solution_id TEXT NOT NULL REFERENCES question_solution(id) ON DELETE CASCADE,
+    item_id TEXT NOT NULL REFERENCES library(id) ON DELETE CASCADE,
+    PRIMARY KEY (solution_id, item_id)
+)

@@ -96,17 +96,10 @@ impl Repository<SharedChallenge, ChallengeFilter> for ChallengeRepository {
             rusqlite::params![id, challenge.name, challenge.status, challenge.target_media, challenge.kind],
         )?;
 
-        // Delete existing questions
-        tx.execute(
-            "DELETE FROM question WHERE challenge_id = ?1",
-            rusqlite::params![id],
-        )?;
-
-        // Insert new questions
+        // Upsert questions: try to update by id+challenge_id, if none updated then insert
         for question in &challenge.questions {
-            tx.execute(
-                "INSERT INTO question (id, challenge_id, kind, question, number, question_cluster_size) 
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            let updated = tx.execute(
+                "UPDATE question SET kind = ?3, question = ?4, number = ?5, question_cluster_size = ?6 WHERE id = ?1 AND challenge_id = ?2",
                 rusqlite::params![
                     question.id,
                     id,
@@ -116,6 +109,21 @@ impl Repository<SharedChallenge, ChallengeFilter> for ChallengeRepository {
                     question.question_cluster_size,
                 ],
             )?;
+
+            if updated == 0 {
+                tx.execute(
+                    "INSERT INTO question (id, challenge_id, kind, question, number, question_cluster_size) 
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                    rusqlite::params![
+                        question.id,
+                        id,
+                        question.kind,
+                        question.question,
+                        question.number,
+                        question.question_cluster_size,
+                    ],
+                )?;
+            }
         }
 
         tx.commit()?;

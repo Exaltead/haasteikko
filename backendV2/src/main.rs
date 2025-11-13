@@ -15,6 +15,7 @@ mod challenge_answers;
 mod database;
 mod library;
 mod migrations;
+mod solution;
 mod utils;
 
 #[derive(Clone)]
@@ -87,6 +88,7 @@ async fn main() {
         .route("/protected", get(protected))
         .nest("/api", library::library_routes())
         .nest("/api", challenge::routes())
+        .nest("/api", solution::routes())
         .nest("/api", challenge_answers::routes())
         .with_state(app_state)
         // For local development, disallow when deploying
