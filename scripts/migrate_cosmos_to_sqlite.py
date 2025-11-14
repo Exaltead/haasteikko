@@ -232,8 +232,18 @@ def write_answer(cur: sqlite3.Cursor, answer: Answer):
         print(answer)
         raise
 
+def find_replacing_item_id(item_id: str, items: list[LibraryItem]) -> str:
+    current_item = [x for x in items if x.id == item_id][0]
+    target_user = "SETME"
+
+    same_name_for_target = [x for x in items if x.user_id == target_user and x.title == current_item.title]
+    if len(same_name_for_target) != 1:
+        print(current_item)
+        raise KeyError
+    return same_name_for_target[0].id
 
 def main():
+    valid_user_ids = ['SETME']
     sqlite_path = "database.sqlite"
     conn_string = os.environ.get("AZURE_COSMOS_CONN")
     if conn_string is None :
@@ -246,6 +256,7 @@ def main():
     items = get_library_items(database_client)
     answers = fetch_answers(database_client)
     filtered_answers = filter_old_challenges([x.id for x in challenges], answers)
+    valid_items = [x for x in items if x.user_id in valid_user_ids]
     print(f"Trimmed {len(answers) - len(filtered_answers)} old answers ({len(filtered_answers)}) remaining")
 
     sql_con = sqlite3.connect(sqlite_path,)
@@ -255,11 +266,24 @@ def main():
     for challenge in challenges:
         write_challenge(cur, challenge)
     
-    for item in items:
+    for item in valid_items:
         write_item(cur, item)
 
+    invalid_item_ids = []
     for answer in filtered_answers:
+        if answer.user_id not in valid_user_ids:
+            continue
+        if answer.item_id not in [x.id for x in valid_items]:
+            answer_real_item_id = find_replacing_item_id(answer.item_id, items)
+            answer.item_id = answer_real_item_id
+        
         write_answer(cur, answer)
+
+    for item_id in invalid_item_ids:
+        item = [x for x in items if x.id == item_id][0]
+        same_name_found = [x for x in items if x.title == item.title and x.id != item.id and x.user_id in valid_user_ids]
+        print(f"Invalid item: {item.id}, {item.title}, same found: {len(same_name_found)}")
+
 
     sql_con.commit()
 
