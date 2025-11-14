@@ -1,11 +1,5 @@
-use axum::{
-    Router,
-    http::HeaderName,
-    routing::get,
-};
+use axum::{Router, http::HeaderName, routing::get};
 use tower_http::cors::{Any, CorsLayer};
-
-use crate::auth::User;
 
 mod auth;
 mod challenge;
@@ -37,7 +31,9 @@ async fn main() {
         .await
         .expect("Failed to fetch JWKS");
 
-    let mut migrator = migrations::Migrator::new(&database_path, &"migrations".to_string())
+    let migrations_path = std::env::var("MIGRATIONS_PATH").expect("MIGRATIONS_PATH must be set");
+
+    let mut migrator = migrations::Migrator::new(&database_path, &migrations_path)
         .expect("Failed to create migrator");
     migrator.run_migrations().expect("Failed to run migrations");
 
@@ -56,7 +52,7 @@ async fn main() {
         ]);
 
     let app = Router::new()
-        .route("/protected", get(protected))
+        .route("/api/ping", get(ping))
         .nest("/api", library::library_routes())
         .nest("/api", challenge::routes())
         .nest("/api", solution::routes())
@@ -71,6 +67,6 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn protected(user: User) -> String {
-    format!("Hello, {}!", user.id)
+async fn ping() -> String {
+    format!("OK")
 }
