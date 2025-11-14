@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 const model = defineModel()
-defineProps<{
+const {options} = defineProps<{
   options: { name: string; value: unknown }[]
   title?: string
 }>()
+
 
 </script>
 

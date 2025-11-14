@@ -1,0 +1,49 @@
+[Unit]
+Description=Haasteikko Rust Backend
+Documentation=https://github.com/Exaltead/haasteikko
+After=network.target
+Wants=network-online.target
+StartLimitIntervalSec=1min
+StartLimitBurst=5
+
+[Service]
+# Run as a dedicated unprivileged user
+User=haasteikko
+Group=haasteikko
+
+# The absolute path to the backend binary
+ExecStart=/opt/haasteikko/haasteikko-backend
+
+# Use an environment file for configuration (optional)
+EnvironmentFile=/etc/haasteikko/backend.env
+
+# Restart policy
+Restart=on-failure
+RestartSec=5s
+
+# Limit resource usage
+LimitNOFILE=65536
+LimitNPROC=512
+
+# Security hardening
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# If binary writes to /var/log/haasteikko or /var/lib/haasteikko, allow it
+ReadWritePaths=/var/lib/haasteikko /var/log/haasteikko /opt/haasteikko
+
+# Set working directory if needed (uncomment and adjust)
+#WorkingDirectory=/opt/haasteikko/backendV2
+
+# Use the systemd kill mode and timeout adjustments
+KillMode=control-group
+TimeoutStopSec=20s
+
+[Install]
+WantedBy=multi-user.target

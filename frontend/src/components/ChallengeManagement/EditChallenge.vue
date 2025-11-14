@@ -6,8 +6,9 @@ import { v4 } from 'uuid';
 import IconPlus from "@/components/icons/IconPlus.vue"
 import IconBack from '@/components/icons/IconBack.vue';
 import BrandedButton from '../basics/BrandedButton.vue';
-import { challengeApiClient } from '@/api/challengeApiClient';
+import { useChallengeApi } from '@/api/challengeApiClient';
 import ChallengeQuestionCard from './ChallengeQuestionCard.vue';
+const challengeApiClient = useChallengeApi()
 const { target } = defineProps<{ target: Challenge | undefined }>()
 
 function createEditTarget(target: Challenge | undefined): Challenge {
@@ -93,7 +94,7 @@ async function submit() {
 }
 
 const canSubmit = computed(() => {
-  return isSubmitting && editTarget.value.name.length > 0 && editTarget.value.questions.length > 0
+  return !isSubmitting.value && editTarget.value.name.length > 0 && editTarget.value.questions.length > 0
 })
 
 </script>

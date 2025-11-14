@@ -1,37 +1,41 @@
-import { solutionSetSchema, type SolutionSet } from "@/models/challenge"
-import { BaseApiClient } from "./baseApiClient"
+import { solutionSchema, type Solution } from "@/models/challenge"
+import { useHttpApi } from "@/plugins/HttpPlugin"
+import type { HttpProxy } from "./HttpProxy"
+import z from "zod"
 
-const newSolutionSetSchema = solutionSetSchema.omit({ id: true })
+//TODO: move the api url to the http proxy, maybe
+const API_URL = import.meta.env.VITE_API_URL
 
-class SolutionsApiClient extends BaseApiClient<
-  typeof solutionSetSchema,
-  typeof newSolutionSetSchema
-> {
-  constructor() {
-    super(solutionSetSchema, newSolutionSetSchema, "solution")
-  }
+class SolutionsApiClient {
+  constructor(private proxy: HttpProxy) {}
 
-  async fetchSolutionSets(): Promise<SolutionSet[]> {
-    return this.fetchEntities(new URLSearchParams({}))
-  }
-
-  async addSolutionSet(solutionSet: Omit<SolutionSet, "id">): Promise<string> {
-    return this.addEntity(solutionSet)
-  }
-
-  async updateSolutionSet(solutionSet: SolutionSet): Promise<void> {
-    return this.updateEntity(solutionSet.id, solutionSet)
-  }
-
-  async getSolutionSetByChallengeId(challengeId: string): Promise<SolutionSet | undefined> {
-    try {
-      const solutionSets = await this.fetchEntities(new URLSearchParams({ challengeId }))
-      return solutionSets[0]
-    } catch {
-      // TODO: map other than 404 to actual error
-      return undefined
+  async searchSolutions(query: { challengeId?: string }): Promise<Solution[]> {
+    const params = new URLSearchParams()
+    if (query.challengeId) {
+      params.append("challengeId", query.challengeId)
     }
+
+    const res = await this.proxy.get(
+      `${API_URL}/solution`,
+      params,
+      z.object({ solutions: solutionSchema.array() }),
+    )
+
+    return res.solutions
+  }
+
+  async upsertSolutions(solutions: Solution[], challengeId: string): Promise<Solution[]> {
+    const result = await this.proxy.post(
+      `${API_URL}/solution/${challengeId}`,
+      { solutions },
+      z.object({ solutions: solutionSchema.array() }),
+    )
+
+    return result.solutions
   }
 }
 
-export const solutionsApiClient = new SolutionsApiClient()
+export function useSolutionsApi() {
+  const httpProxy = useHttpApi()
+  return new SolutionsApiClient(httpProxy)
+}

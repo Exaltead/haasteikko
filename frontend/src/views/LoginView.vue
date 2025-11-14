@@ -1,93 +1,79 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import Button from '@/components/basics/BrandedButton.vue';
-import { postLogin } from '@/api/authApi';
-import { saveTokens } from '@/modules/auth-store';
-import { useRouter } from 'vue-router';
-import { getAccessToken, redirectLogin } from '@/auth/auth';
+
+import BrandedButton from '@/components/basics/BrandedButton.vue';
+import { useAuth0 } from '@auth0/auth0-vue';
+import { watch, onMounted, nextTick } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 
+
+const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
 const router = useRouter()
+const route = useRoute()
 
-const userName = ref<string>("")
-const password = ref<string>("")
+// Prevent multiple navigation attempts (auth SDK may toggle isLoading briefly).
+let navigated = false
 
-const loggingIn = ref(false)
+async function navigateHomeOnce() {
+  if (navigated) return
+  navigated = true
 
-const invalidLogin = computed(() => {
-  return userName.value.length === 0 || password.value.length === 0
-})
+  // Wait for router to be ready and a microtask to let any synchronous
+  // SDK work complete. This makes navigation deterministic when the SDK
+  // transitions isLoading from true -> false.
+  await router.isReady()
+  await nextTick()
 
+  await router.replace({ name: 'home' })
 
-
-async function doLogin() {
-  loggingIn.value = true
-  const token = await postLogin(userName.value.trim(), password.value.trim())
-  loggingIn.value = false
-  if (token) {
-    saveTokens(token)
-    router.push({ name: "home" })
-  }
 }
 
-const loginDisabled = computed(() => {
-  return loggingIn.value || invalidLogin.value
+// If auth0 is already processing (redirect callback) there will be a short loading
+// period. Wait until loading finishes and the user is authenticated before
+// navigating to the protected 'home' route. Use replace so we don't leave the
+// login page in history.
+watch(
+  [isAuthenticated, isLoading],
+  ([auth, loading]) => {
+    // If we are in the OAuth redirect URL (contains code/state) the auth
+    // plugin or router may perform a cleanup navigation; wait until that is
+    // finished to avoid racing and causing our navigation to be cancelled.
+    if (!loading && auth) {
+      const hasRedirectParams = Boolean(route.query.code || route.query.state)
+      if (hasRedirectParams) {
+        console.log('Detected redirect params in URL; waiting for router cleanup')
+        // watch the route and navigate once query params are gone
+        const stop = watch(
+          () => route.fullPath,
+          () => {
+            const stillHas = Boolean(route.query.code || route.query.state)
+            if (!stillHas) {
+              stop()
+              void navigateHomeOnce()
+            }
+          }
+        )
+      } else {
+        void navigateHomeOnce()
+      }
+    }
+  }
+)
+
+onMounted(() => {
+  if (!isLoading.value && isAuthenticated.value) {
+    void navigateHomeOnce()
+  }
 })
 
-const loginText = computed(() => {
-  return loggingIn.value ? "Kirjaudutaan sisään..." : "Kirjaudu sisään"
-})
-
-
-async function routeOnUserLoggedIn() {
-
-  const accessToken = await getAccessToken({ routeOnLoginFail: true })
-
-  if (accessToken) {
-    console.log(accessToken)
-    router.push({ name: "login" })
-  }
-  else {
-    setTimeout(routeOnUserLoggedIn, 1000)
-  }
+function login() {
+  loginWithRedirect()
 }
 
 
-routeOnUserLoggedIn()
 </script>
-
 <template>
-  <main>
-    <div class="flex flex-row w-full justify-center pt-10">
-      <div
-        class="flex flex-col justify-center w-fit border border-brand-primary bg-light-gray rounded-lg shadow-lg p-10 pt-4 gap-10">
-
-        <p class="mx-auto text-lg  font-bold">Kirjaudu sisään Haasteikkoon</p>
-        <Button :onClick="redirectLogin" :text="'Kirjaudu sisään (uusi)'"></Button>
-        <!--<div class="flex flex-col gap-10 max-w-md mx-auto">
-
-          <div class="flex flex-col gap-2">
-            <label for="username"> Käyttäjätunnus</label>
-            <input id="username" type="text" required v-model="userName"
-              class="rounded border border-brand-primary bg-white" />
-          </div>
-          <div class="flex flex-col gap-2">
-            <label for="Password"> Salasana</label>
-            <input id="password" type="password" required v-model="password"
-              class="rounded border border-brand-primary bg-white" />
-          </div>
-
-        </div>
-
-        <div class="flex w-full justify-center">
-          <Button :disabled="loginDisabled" :onClick="doLogin" :text="loginText" :is-submitting="loggingIn"
-            class="border border-brand-primary rounded">
-            Kirjaudu sisään
-          </Button>
-        </div>-->
-      </div>
-
-    </div>
-
-  </main>
+    <div class="p-10">
+      <BrandedButton :onClick="login" text="Kirjaudu sisään"></BrandedButton>
+  </div>
 </template>

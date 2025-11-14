@@ -2,10 +2,9 @@
 import { computed, ref, watch } from 'vue';
 import IconMenu from './icons/IconMenu.vue';
 import { useRouter } from 'vue-router';
-import { clearTokens } from '@/modules/auth-store';
-import { redirectLogout } from '@/auth/auth';
+import { useAuth0 } from '@auth0/auth0-vue';
 
-
+const { logout } = useAuth0();
 
 const navOpen = ref(false)
 
@@ -28,7 +27,7 @@ const showNavLinks = computed(() => {
 function doLogout() {
 
   navOpen.value = false
-  redirectLogout()
+  logout({ logoutParams: { returnTo: window.location.origin}})
   router.push({ name: "login" })
 }
 

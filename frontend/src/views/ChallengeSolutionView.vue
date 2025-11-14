@@ -1,17 +1,21 @@
 <script lang="ts" setup>
-import { answerApiClient } from '@/api/answerApiClient';
-import { challengeApiClient } from '@/api/challengeApiClient';
-import { libraryApi } from '@/api/libraryApiClient';
+import { useAnswerApi } from '@/api/answerApiClient';
+import { useChallengeApi } from '@/api/challengeApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';
 
-import { solutionsApiClient } from '@/api/solutionsApiClient';
+import { useSolutionsApi } from '@/api/solutionsApiClient';
 import BrandedButton from '@/components/basics/BrandedButton.vue';
 import BrandedSelect from '@/components/basics/BrandedSelect.vue';
-import type { Answer, Question, Solution, SolutionSet } from '@/models/challenge';
+import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
+const libraryApi = useLibraryApi()
+const challengeApiClient = useChallengeApi()
+const answerApiClient = useAnswerApi()
+const solutionsApiClient = useSolutionsApi()
 
 
 const allItems = ref<LibraryItem[]>([])
@@ -21,30 +25,28 @@ const allAnswers = ref<Answer[]>([])
 function getEmptySolution(): Solution[] {
   return questions.value.map(t => {
     return {
+      kind: t.questionClusterSize > 1 ? "MultiPartSolution" : "SinglePartSolution",
       questionId: t.id,
       singleAnswerItemId: "",
-      multipleAnswerItemIds: [...Array(t.questionClusterSize).keys()].map(() => "")
+      multipleAnswerItemIds: t.questionClusterSize > 1 ? [...Array(t.questionClusterSize).keys()].map(() => "") : []
     }
   })
 }
 
 const solution = ref<Solution[]>([])
-const solutionId = ref<string | undefined>(undefined)
 async function getSolution(): Promise<Solution[]> {
   const challengeId = route.params.id as string
-  const solutionSet = await solutionsApiClient.getSolutionSetByChallengeId(challengeId)
-  if (solutionSet === undefined) {
+  const solutions = await solutionsApiClient.searchSolutions({challengeId: challengeId })
+  if (solutions.length === 0) {
     const solution = getEmptySolution()
 
     return solution
   } else {
-    solutionId.value = solutionSet.id
-    const solutions = []
-
     for (const question of questions.value) {
-      const solutionItem = solutionSet.solutions.find(t => t.questionId === question.id)
+      const solutionItem = solutions.find(t => t.questionId === question.id)
       if (solutionItem === undefined) {
         solutions.push({
+          kind: question.questionClusterSize > 1 ? "MultiPartSolution" : "SinglePartSolution",
           questionId: question.id,
           singleAnswerItemId: "",
           multipleAnswerItemIds: [...Array(question.questionClusterSize).keys()].map(() => "")
@@ -56,7 +58,6 @@ async function getSolution(): Promise<Solution[]> {
         solutions.push(solutionItem)
       }
     }
-
     return solutions
   }
 
@@ -78,7 +79,6 @@ async function loadData() {
     allItems.value = items
   }
 
-
   // Loads questions in the challenges
   const loadChallenges = async () => {
     const challenges = await challengeApiClient.fetchChallenges()
@@ -92,7 +92,7 @@ async function loadData() {
 
   // Loads answers
   const loadAnswers = async () => {
-    const answers = await answerApiClient.getChallengeAnswers(challengeId)
+    const answers = await answerApiClient.searchAnswers({ challengeId})
     allAnswers.value = answers.filter(t => {
       return t.answered === true
     })
@@ -108,20 +108,7 @@ const isSubmitting = ref(false)
 async function submitSolution() {
   isSubmitting.value = true
   const challengeId = route.params.id as string
-  if (solutionId.value === undefined) {
-    const solutionSet: Omit<SolutionSet, "id"> = {
-      challengeId: challengeId,
-      solutions: solution.value
-    }
-    await solutionsApiClient.addSolutionSet(solutionSet)
-  } else {
-    const solutionSet: SolutionSet = {
-      id: solutionId.value,
-      challengeId: challengeId,
-      solutions: solution.value
-    }
-    await solutionsApiClient.updateSolutionSet(solutionSet)
-  }
+  solutionsApiClient.upsertSolutions(solution.value, challengeId)
 
   isSubmitting.value = false
 
@@ -177,6 +164,7 @@ function getQuestionAnswers(question: Question): Answer[] {
 }
 
 const questionToAnswersMap = computed(() => {
+
   const mapping = questions.value.map((question) => {
     const answers = getQuestionAnswers(question)
       .map(answer => {
@@ -196,11 +184,12 @@ const questionToAnswersMap = computed(() => {
     }
   })
 
-  return mapping.sort((a, b) => a.question.number - b.question.number)
+
+
+  const sorted = mapping.sort((a, b) => a.question.number - b.question.number)
+
+  return sorted
 })
-
-
-
 
 
 </script>
@@ -219,7 +208,7 @@ const questionToAnswersMap = computed(() => {
             <div v-if="question.kind === 'Boolean'" class="flex flex-col gap-2 justify-start">
               <h2>{{ question.question }}</h2>
               <div class="flex flex-row justify-end w-full">
-                <BrandedSelect v-if="options.length > 0" :options="options" v-model="solution[i].singleAnswerItemId" />
+                <BrandedSelect v-if="options.length > 0" :options="options" v-model="solution.find(t => t.questionId === question.id)!.singleAnswerItemId" />
                 <span v-else class="text-text-primary">Ei vastauksia</span>
               </div>
 
@@ -227,7 +216,7 @@ const questionToAnswersMap = computed(() => {
             <div v-else-if="question.kind === 'TextInput'" class="flex flex-col gap-2">
               <h2>{{ question.question }}</h2>
               <div v-if="options.length > 0">
-                <div v-for="_, index in solution[i].multipleAnswerItemIds" :key="index">
+                <div v-for="_, index in solution.find(t => t.questionId === question.id)!.multipleAnswerItemIds" :key="index">
                   <div v-if="index === 0 || solution[i].multipleAnswerItemIds[0] !== ''">
                     <BrandedSelect v-if="options.length > 0" :options="options"
                       v-model="solution[i].multipleAnswerItemIds[index]" :title="`Osa ${index + 1}`" />

@@ -2,11 +2,16 @@
 import EntryListing from '../components/EntryListing/EntryListing.vue'
 import BrandedButton from '@/components/basics/BrandedButton.vue';
 import NewItemModal from "@/components/EntryListing/NewItemModal.vue"
+import { useAuth0 } from '@auth0/auth0-vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 
 const router = useRouter()
+//const {getAccessTokenSilently} = useAuth0()
+
+//const accessToken = await getAccessTokenSilently()
+//console.log("Access token:", accessToken)
 
 function createNew() {
   showDialog.value = true
@@ -15,6 +20,7 @@ function createNew() {
 const showDialog = ref(false)
 
 function onNewItemSubmitComplete(id: string): void {
+  console.log("Hereee")
   showDialog.value = false
 
   router.push({ name: "libraryItem", params: { id } })

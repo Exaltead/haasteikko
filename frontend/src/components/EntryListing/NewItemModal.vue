@@ -4,9 +4,11 @@ import BrandedButton from '@/components/basics/BrandedButton.vue';
 import { computed, ref } from 'vue'
 import TextInput from "@/components/basics/TextInput.vue"
 import type { Book, Game, LibraryItem } from '@/models/LibraryItem';
-import { libraryApi } from '@/api/libraryApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';
 import BrandedSelect from '@/components/basics/BrandedSelect.vue';
 
+
+const libraryApi = useLibraryApi()
 const { isModalOpen } = defineProps<{
   isModalOpen: boolean
 }>()
@@ -82,7 +84,8 @@ async function submitModal(): Promise<void> {
         author: bookModel.value.author,
         translator: bookModel.value.translator,
         activatedChallengeIds: [],
-        favorite: false
+        favorite: false,
+        completedAt: Date.now().toLocaleString()
       }
       return newBook
     }
@@ -92,7 +95,8 @@ async function submitModal(): Promise<void> {
         title: gameModel.value.title,
         creator: gameModel.value.creator,
         activatedChallengeIds: [],
-        favorite: false
+        favorite: false,
+        completedAt: Date.now().toLocaleString()
       }
 
       return newGame

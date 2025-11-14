@@ -2,9 +2,11 @@
 
 import { computed, ref } from "vue"
 import type { LibraryItem } from "@/models/LibraryItem"
-import { libraryApi } from '@/api/libraryApiClient';
+import { useLibraryApi } from '@/api/libraryApiClient';
 import LibraryItemCard from "./LibraryItemCard.vue"
 
+
+const libraryApi = useLibraryApi()
 const items = ref<LibraryItem[]>([])
 
 const listItems = computed(() => items.value)

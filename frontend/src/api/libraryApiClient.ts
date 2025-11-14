@@ -1,7 +1,10 @@
-import { z } from "zod";
-import { BaseApiClient } from "./baseApiClient";
-import type { Book, Game, LibraryItem } from "@/models/LibraryItem";
+import { z } from "zod"
+import { BaseApiClient } from "./baseApiClient"
+import type { Book, Game, LibraryItem } from "@/models/LibraryItem"
+import type { HttpProxy } from "./HttpProxy"
+import { useHttpApi } from "@/plugins/HttpPlugin"
 
+/*
 const libraryBookSchema = z.object({
   title: z.string(),
   author: z.string(),
@@ -10,8 +13,9 @@ const libraryBookSchema = z.object({
 
 const libraryGameSchema = z.object({
   title: z.string(),
-  creator: z.string()
+  creator: z.string(),
 })
+
 
 const libraryApiItemSchema = z.object({
   kind: z.literal("Book").or(z.literal("Game")),
@@ -19,13 +23,54 @@ const libraryApiItemSchema = z.object({
   book: libraryBookSchema.optional(),
   game: libraryGameSchema.optional(),
   activatedChallengeIds: z.string().array(),
-  favorite: z.boolean()
-})
+  favorite: z.boolean(),
+})*/
+
+const libraryApiItemSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("Book"),
+    id: z.string(),
+    title: z.string(),
+    author: z.string(),
+    translator: z.string().optional(),
+    activatedChallengeIds: z.string().array(),
+    favorite: z.boolean(),
+    completedAt: z.string(),
+  }),
+  z.object({
+    kind: z.literal("Game"),
+    id: z.string(),
+    title: z.string(),
+    author: z.string(),
+    activatedChallengeIds: z.string().array(),
+    favorite: z.boolean(),
+    completedAt: z.string(),
+  }),
+])
+
+const newlibraryApiItemSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("Book"),
+    title: z.string(),
+    author: z.string(),
+    translator: z.string().optional(),
+    activatedChallengeIds: z.string().array(),
+    favorite: z.boolean(),
+    completedAt: z.string(),
+  }),
+  z.object({
+    kind: z.literal("Game"),
+    title: z.string(),
+    author: z.string(),
+    activatedChallengeIds: z.string().array(),
+    favorite: z.boolean(),
+    completedAt: z.string(),
+  }),
+])
 
 type ApiLibraryItem = z.infer<typeof libraryApiItemSchema>
 
-const newApiLibraryItemSchema = libraryApiItemSchema.omit({ id: true })
-type NewApiLibraryItem = z.infer<typeof newApiLibraryItemSchema>
+type NewApiLibraryItem = z.infer<typeof newlibraryApiItemSchema>
 
 function mapFromApi(item: ApiLibraryItem): LibraryItem {
   switch (item.kind) {
@@ -35,9 +80,10 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         favorite: item.favorite,
         id: item.id,
         activatedChallengeIds: item.activatedChallengeIds,
-        translator: item.book?.translator,
-        title: item.book!.title,
-        author: item.book!.author
+        translator: item.translator,
+        title: item.title,
+        author: item.author,
+        completedAt: item.completedAt,
       }
 
       return book
@@ -47,8 +93,9 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         favorite: item.favorite,
         id: item.id,
         activatedChallengeIds: item.activatedChallengeIds,
-        title: item.game!.title,
-        creator: item.game!.creator
+        title: item.title,
+        creator: item.author,
+        completedAt: item.completedAt,
       }
 
       return game
@@ -56,69 +103,68 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
 }
 
 function mapToApi(item: LibraryItem): NewApiLibraryItem {
-
   switch (item.kind) {
     case "Book":
-
       return {
         kind: "Book",
-        book: {
-          title: item.title,
-          author: item.author,
-          translator: item.translator ?? "",
-        },
+        title: item.title,
+        author: item.author,
+        translator: item.translator,
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
-      };
+        completedAt: item.completedAt,
+      }
     case "Game":
       return {
         kind: "Game",
-        game: {
-          title: item.title,
-          creator: item.creator,
-        },
+        title: item.title,
+        author: item.creator,
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
-      };
+        completedAt: item.completedAt,
+      }
   }
 }
 
 class LibraryApiClient extends BaseApiClient<
   typeof libraryApiItemSchema,
-  typeof newApiLibraryItemSchema> {
-    constructor(){
-      super(libraryApiItemSchema, newApiLibraryItemSchema, "library")
+  typeof newlibraryApiItemSchema
+> {
+  constructor(proxy: HttpProxy) {
+    super(libraryApiItemSchema, newlibraryApiItemSchema, "library", proxy)
+  }
+
+  async fetchLibraryItems(): Promise<LibraryItem[]> {
+    const items = await this.fetchEntities(new URLSearchParams())
+    return items.map(mapFromApi)
+  }
+
+  async addLibraryItem(item: Omit<LibraryItem, "id">): Promise<string> {
+    // Discriminated unions and omits do not work together
+    const apiItem = mapToApi({ ...item } as unknown as LibraryItem)
+    return this.addEntity(apiItem)
+  }
+
+  async updateLibraryItem(item: LibraryItem): Promise<void> {
+    const apiItem = mapToApi(item)
+    return await this.updateEntity(item.id, { ...apiItem, id: item.id })
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    return await this.deleteEntity(id)
+  }
+
+  async getLibraryItem(id: string): Promise<LibraryItem | undefined> {
+    const item = await this.fetchEntity(id)
+    if (item === undefined) {
+      return undefined
     }
 
-    async fetchLibraryItems(): Promise<LibraryItem[]> {
-      const items = await this.fetchEntities(new URLSearchParams())
-      return items.map(mapFromApi)
-    }
-
-    async addLibraryItem(item: Omit<LibraryItem, "id">): Promise<string> {
-      // Discriminated unions and omits do not work together
-      const apiItem = mapToApi({...item } as unknown as LibraryItem)
-      return this.addEntity(apiItem)
-    }
-
-    async updateLibraryItem(item: LibraryItem): Promise<void> {
-      const apiItem = mapToApi(item)
-      return await this.updateEntity(item.id, {...apiItem, id: item.id})
-    }
-
-    async deleteItem(id: string): Promise<void>{
-      return await this.deleteEntity(id)
-    }
-
-    async getLibraryItem(id: string): Promise<LibraryItem | undefined> {
-      const item = await this.fetchEntity(id)
-      if(item === undefined) {
-        return undefined
-      }
-
-      return mapFromApi(item)
-    }
+    return mapFromApi(item)
+  }
 }
 
-
-export const libraryApi = new LibraryApiClient()
+export function useLibraryApi(): LibraryApiClient {
+  const proxy = useHttpApi()
+  return new LibraryApiClient(proxy)
+}
