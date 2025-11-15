@@ -75,5 +75,6 @@ function login() {
 <template>
     <div class="p-10">
       <BrandedButton :onClick="login" text="Kirjaudu sisään"></BrandedButton>
+      <p> CI TESTING</p>
   </div>
 </template>
