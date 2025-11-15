@@ -4,10 +4,12 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "monthly"
-    minimum-version-age: "7 days"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "cargo"
     directory: "/backend"
     schedule:
       interval: "monthly"
-    minimum-version-age: "7 days"
+    cooldown:
+      default-days: 7
