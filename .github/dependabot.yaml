@@ -3,8 +3,11 @@ updates:
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
-  - package-ecosystem: "gomod"
+      interval: "monthly"
+    minimum-version-age: "7 days"
+
+  - package-ecosystem: "cargo"
     directory: "/backend"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    minimum-version-age: "7 days"
