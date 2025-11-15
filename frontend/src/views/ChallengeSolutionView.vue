@@ -217,9 +217,9 @@ const questionToAnswersMap = computed(() => {
               <h2>{{ question.question }}</h2>
               <div v-if="options.length > 0">
                 <div v-for="_, index in solution.find(t => t.questionId === question.id)!.multipleAnswerItemIds" :key="index">
-                  <div v-if="index === 0 || solution[i].multipleAnswerItemIds[0] !== ''">
+                  <div v-if="index === 0 || solution[i]!.multipleAnswerItemIds[0] !== ''">
                     <BrandedSelect v-if="options.length > 0" :options="options"
-                      v-model="solution[i].multipleAnswerItemIds[index]" :title="`Osa ${index + 1}`" />
+                      v-model="solution[i]!.multipleAnswerItemIds[index]" :title="`Osa ${index + 1}`" />
                   </div>
                 </div>
               </div>
