@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "backendV2"
+		},
+		{
+			"path": ".github"
 		}
 	],
 	"settings": {

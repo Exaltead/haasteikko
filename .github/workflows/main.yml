@@ -1,4 +1,4 @@
-name: Deploy to staging
+name: Build and Deploy
 
 on:
   push:
@@ -6,12 +6,7 @@ on:
       - main
 
 env:
-  AZURE_FUNCTIONAPP_NAME: "haasteikkostg-flex-api-hsvowedtubwye"
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: "./backend/deployment"
-  AZURE_STORAGE_ACCOUNT_NAME: "haasteikkostghshsvowedt"
-  AZURE_EXTERNAL_TENANT_ID: "598750cd-d651-40f0-a8ba-dc7d2409b558"
-  AZURE_EXTERNAL_CLIENT_ID: "7026c030-9feb-4589-b17f-cc27c5cacb6d"
-  API_URL: "https://haasteikkostg-flex-api-hsvowedtubwye.azurewebsites.net/api"
+  API_URL: "https://haasteikko.eu/api"
 
 jobs:
   build-and-deploy:
@@ -24,43 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Setup GO
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24.x"
-          cache-dependency-path: |
-            backend/go.sum
-
-      - name: Build backend binary
-        run: |
-          cd backend
-          go mod download
-          go mod tidy
-          GOOS=linux GOARCH=amd64 go build -o backend
-          mkdir -p deployment
-          mv backend deployment/backend
-          cp -r api deployment/
-          cp host.json deployment/host.json
-
-          cd deployment
-
-          sed -i 's/\.exe//g' host.json
-
-      - name: "Deploy backend to Azure Functions"
-        uses: "Azure/functions-action@v1"
-        id: functions-deployment
-        with:
-          sku: "flexconsumption"
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -69,25 +27,63 @@ jobs:
       - name: Build frontend
         env:
           VITE_API_URL: ${{ env.API_URL }}
-          VITE_CLIENT_ID: ${{ env.AZURE_EXTERNAL_CLIENT_ID}}
-          VITE_TENANT_ID: ${{ env.AZURE_EXTERNAL_TENANT_ID }}
-          VITE_REDIRECT_URI: https://haasteikkostghshsvowedt.z1.web.core.windows.net/auth/callback
-          VITE_POST_LOGOUT_REDIRECT_URI: https://haasteikkostghshsvowedt.z1.web.core.windows.net
-          VITE_APP_CIAM_NAME: haasteikko
+          VITE_CLIENT_ID: ${{ secrets.CLIENT_ID }}
         run: |
           cd frontend
           npm ci
           npm run build
 
-      - name: Upload to blob storage
-        uses: azure/CLI@v1
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
         with:
-          inlineScript: |
-            az storage blob service-properties update --account-name  ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} --static-website --404-document index.html --index-document index.html --auth-mode key
-            az storage blob sync -c \$web --account-name ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} --auth-mode key -s ./frontend/dist
+          toolchain: stable
+          override: true
 
-        # Azure logout
-      - name: logout
+      - name: Cache Cargo registry and index
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/backendV2/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache Rust target directory
+        uses: actions/cache@v4
+        with:
+          path: backendV2/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/backendV2/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-
+
+      - name: Build rust backend
+        working-directory: backendV2
         run: |
-          az logout
-        if: always()
+          rustup target add x86_64-unknown-linux-gnu || true
+          cargo build --release --target x86_64-unknown-linux-gnu
+
+      - name: Prepare deployment artifacts
+        run: |
+          rm -rf deployment_artifacts || true
+          mkdir -p deployment_artifacts/dist
+          cp -r frontend/dist/* deployment_artifacts/dist/
+          mkdir -p deployment_artifacts/backend
+          # copy the built binary
+          cp backendV2/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/ || true
+          # copy migrations
+          cp -r backendV2/migrations deployment_artifacts/backend/
+
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_SECRET }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts || true
+
+      - name: Deploy
+        run: |
+          rsync -r deployment_artifacts/dist ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home
+          rsync -r deployment_artifacts/backend/migrations ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/haasteikko
+          rsync deployment_artifacts/backend/haasteikko-backend ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/haasteikko
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo systemctl restart haasteikko-backend"
