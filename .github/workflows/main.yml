@@ -45,20 +45,20 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/backendV2/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/backend/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
 
       - name: Cache Rust target directory
         uses: actions/cache@v4
         with:
-          path: backendV2/target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/backendV2/Cargo.lock') }}
+          path: backend/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/backend/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-target-
 
       - name: Build rust backend
-        working-directory: backendV2
+        working-directory: backend
         run: |
           rustup target add x86_64-unknown-linux-gnu || true
           cargo build --release --target x86_64-unknown-linux-gnu
@@ -70,9 +70,9 @@ jobs:
           cp -r frontend/dist/* deployment_artifacts/dist/
           mkdir -p deployment_artifacts/backend
           # copy the built binary
-          cp backendV2/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/ || true
+          cp backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/ || true
           # copy migrations
-          cp -r backendV2/migrations deployment_artifacts/backend/
+          cp -r backend/migrations deployment_artifacts/backend/
 
       - name: Create SSH key
         run: |

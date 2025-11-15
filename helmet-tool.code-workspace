@@ -10,9 +10,6 @@
 			"path": "backend"
 		},
 		{
-			"path": "backendV2"
-		},
-		{
 			"path": ".github"
 		}
 	],
