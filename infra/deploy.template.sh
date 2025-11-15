@@ -1,1 +1,0 @@
-az deployment group create --resource-group <RG_NAME> --template-file main.bicep --parameters <PARAM_FILE>
