@@ -68,7 +68,9 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "echo Connection Successful"
 
-
       - name: Deploy
         run: |
           rsync -r deployment_artifacts/dist ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home
+          rsync -r deployment_artifacts/backend/migrations ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/haasteikko
+          rsync deployment_artifacts/backend/haasteikko-backend ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/haasteikko
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo systemctl restart haasteikko-backend"

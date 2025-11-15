@@ -68,5 +68,5 @@ async fn main() {
 }
 
 async fn ping() -> String {
-    format!("OK")
+    format!("PONG")
 }
