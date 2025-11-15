@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = { version = "0.8.4", features = ["macros"] }
+axum = { version = "0.8.6", features = ["macros"] }
 rusqlite = { version = "0.37.0", features = ["bundled"] }
 dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
