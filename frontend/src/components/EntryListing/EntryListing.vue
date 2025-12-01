@@ -9,7 +9,11 @@ import LibraryItemCard from "./LibraryItemCard.vue"
 const libraryApi = useLibraryApi()
 const items = ref<LibraryItem[]>([])
 
-const listItems = computed(() => items.value)
+const listItems = computed(() => [...items.value].sort((a, b) => {
+  const dateA = new Date(a.addedAt).getTime()
+  const dateB = new Date(b.addedAt).getTime()
+  return dateB - dateA
+}))
 
 async function getItems() {
   const serverItems = await libraryApi.fetchLibraryItems()

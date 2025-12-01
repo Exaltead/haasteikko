@@ -4,28 +4,6 @@ import type { Book, Game, LibraryItem } from "@/models/LibraryItem"
 import type { HttpProxy } from "./HttpProxy"
 import { useHttpApi } from "@/plugins/HttpPlugin"
 
-/*
-const libraryBookSchema = z.object({
-  title: z.string(),
-  author: z.string(),
-  translator: z.string().optional(),
-})
-
-const libraryGameSchema = z.object({
-  title: z.string(),
-  creator: z.string(),
-})
-
-
-const libraryApiItemSchema = z.object({
-  kind: z.literal("Book").or(z.literal("Game")),
-  id: z.string(),
-  book: libraryBookSchema.optional(),
-  game: libraryGameSchema.optional(),
-  activatedChallengeIds: z.string().array(),
-  favorite: z.boolean(),
-})*/
-
 const libraryApiItemSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("Book"),
@@ -36,6 +14,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
     completedAt: z.string(),
+    addedAt: z.string().datetime({offset: true}),
   }),
   z.object({
     kind: z.literal("Game"),
@@ -45,6 +24,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
     completedAt: z.string(),
+    addedAt: z.string().datetime({offset: true}),
   }),
 ])
 
@@ -84,6 +64,7 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         title: item.title,
         author: item.author,
         completedAt: item.completedAt,
+        addedAt: item.addedAt,
       }
 
       return book
@@ -96,6 +77,7 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         title: item.title,
         creator: item.author,
         completedAt: item.completedAt,
+        addedAt: item.addedAt,
       }
 
       return game
@@ -139,7 +121,7 @@ class LibraryApiClient extends BaseApiClient<
     return items.map(mapFromApi)
   }
 
-  async addLibraryItem(item: Omit<LibraryItem, "id">): Promise<string> {
+  async addLibraryItem(item: Omit<LibraryItem, "id" | "addedAt">): Promise<string> {
     // Discriminated unions and omits do not work together
     const apiItem = mapToApi({ ...item } as unknown as LibraryItem)
     return this.addEntity(apiItem)

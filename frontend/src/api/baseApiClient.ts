@@ -17,12 +17,12 @@ export abstract class BaseApiClient<
     this.baseUrl = `${API_URL}/${urlSuffix}`
   }
 
-  protected async updateEntity(id: string, entity: z.infer<T>): Promise<void> {
+  protected async updateEntity(id: string, entity: Omit<z.infer<T>, "addedAt">): Promise<void> {
     const validated = this.schema.parse(entity)
     return await this.proxy.put(`${this.baseUrl}/${id}`, validated)
   }
 
-  protected async addEntity(newEntity: Omit<z.infer<T>, "id">): Promise<string> {
+  protected async addEntity(newEntity: Omit<z.infer<T>, "id" | "addedAt">): Promise<string> {
     const validated = this.newSchema.parse(newEntity)
     const { id } = await this.proxy.post(this.baseUrl, validated, z.object({ id: z.string() }))
     return id

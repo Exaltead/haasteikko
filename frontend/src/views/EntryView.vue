@@ -39,8 +39,6 @@ async function fetchData() {
 }
 
 
-
-
 watch(() => route.params.id, fetchData, { immediate: true })
 
 

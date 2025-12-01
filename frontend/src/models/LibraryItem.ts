@@ -3,6 +3,7 @@ type BaseLibraryItem = {
   activatedChallengeIds: string[]
   favorite: boolean
   completedAt: string
+  addedAt: string
 }
 
 export type Book = BaseLibraryItem & {
