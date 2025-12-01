@@ -15,8 +15,8 @@ const model = defineModel()
   <div class="flex flex-col gap-2">
     <div class="flex flex-row items-center gap-2">
       <CustomIcon v-if="icon" :name="icon" class="text-brand-primary" />
-      <label v-bind:for="name"> {{ label }}</label>
+      <label :for="name"> {{ label }}</label>
     </div>
-    <input type="text" v-model="model" class="rounded border border-brand-primary bg-light-gray" />
+    <input :id="name" type="text" v-model="model" class="rounded border border-brand-primary bg-light-gray" />
   </div>
 </template>

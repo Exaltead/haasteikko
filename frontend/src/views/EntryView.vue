@@ -77,7 +77,7 @@ const challengeKeys = computed(() => {
 <template>
   <main>
     <div>
-      <button :onClick="router.back" class="p-4">
+      <button :onClick="router.back" class="p-4" data-testid="back-button">
         <IconBack class="text-brand-primary w-8 h-fit cursor-pointer" />
       </button>
       <div class="px-4 md:px-10 flex flex-col gap-10" v-if="item">
