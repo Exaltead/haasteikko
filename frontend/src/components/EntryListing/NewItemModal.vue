@@ -76,9 +76,9 @@ function closeModal(): void {
 }
 
 async function submitModal(): Promise<void> {
-  function toItem(): Omit<LibraryItem, "id"> {
+  function toItem(): Omit<LibraryItem, "id"|"addedAt"> {
     if (kind.value === 'Book') {
-      const newBook: Omit<Book, "id"> = {
+      const newBook: Omit<Book, "id"| "addedAt"> = {
         kind: "Book",
         title: bookModel.value.name,
         author: bookModel.value.author,
@@ -90,7 +90,7 @@ async function submitModal(): Promise<void> {
       return newBook
     }
     if (kind.value === 'Game') {
-      const newGame: Omit<Game, "id"> = {
+      const newGame: Omit<Game, "id"| "addedAt"> = {
         kind: 'Game',
         title: gameModel.value.title,
         creator: gameModel.value.creator,
