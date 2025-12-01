@@ -9,6 +9,7 @@ import { useLibraryApi } from '@/api/libraryApiClient';
 const libraryApi = useLibraryApi()
 const props = defineProps<{
   item: LibraryItem
+  orderingNumber: number
 }>()
 
 const favorite = ref<boolean>(props.item.favorite)
@@ -32,8 +33,12 @@ async function updateItemFavorite(): Promise<void> {
 <template>
   <div class="card flex flex-col items-center justify-start md:max-w-[400px] min-w-[250px] w-full p-2.5 pt-2 gap-2">
     <div class="flex flex-row justify-between items-center w-full px-2.5 py-1 border-b border-brand-orange">
-      <IconedText v-if="item.kind === 'Book'" :text="item.title" :icon-name="'Book'" :heading="true" />
-      <IconedText v-if="item.kind === 'Game'" :text="item.title" :icon-name="'Game'" :heading="true" />
+      <div class="flex flex-row justify-between gap-2 items-center">
+        <span class="font-bold">{{`#${orderingNumber}`}}</span>
+        <IconedText v-if="item.kind === 'Book'" :text="` ${item.title}`" :icon-name="'Book'" :heading="true" />
+        <IconedText v-if="item.kind === 'Game'" :text="item.title" :icon-name="'Game'" :heading="true" />
+      </div>
+
       <button @click="updateItemFavorite" class="cursor-pointer">
         <CustomIcon v-if="favorite" name="HeartFull" class="text-brand-orange" />
         <CustomIcon v-else name="HeartEmpty" class="text-brand-orange" />
