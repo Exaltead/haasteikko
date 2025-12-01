@@ -65,7 +65,7 @@ function createButtonStyle(disabled: boolean, style: ButtonStyle | undefined) {
 }
 
 const iconStyle = computed(() => {
-  let baseStyle = 'w-[22px] h-fit'
+  const baseStyle = 'w-[22px] h-fit'
   if (props.styling?.iconColor) {
     return baseStyle + ' ' + props.styling.iconColor
   }
