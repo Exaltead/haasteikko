@@ -22,6 +22,7 @@
     "zod": "^3.25.75"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/vite": "^4.1.12",
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "24.10.0",
@@ -29,6 +30,7 @@
     "@vue/eslint-config-prettier": "^10.1.0",
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/tsconfig": "0.8.1",
+    "dotenv": "^17.2.3",
     "eslint": "^9.27.0",
     "eslint-plugin-vue": "^9.32.0",
     "jiti": "2.6.1",
