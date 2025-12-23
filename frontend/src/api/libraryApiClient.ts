@@ -14,7 +14,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
     completedAt: z.string(),
-    addedAt: z.string().datetime({offset: true}),
+    addedAt: z.string().datetime({ offset: true }),
   }),
   z.object({
     kind: z.literal("Game"),
@@ -24,7 +24,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
     completedAt: z.string(),
-    addedAt: z.string().datetime({offset: true}),
+    addedAt: z.string().datetime({ offset: true }),
   }),
 ])
 
@@ -37,6 +37,7 @@ const newlibraryApiItemSchema = z.discriminatedUnion("kind", [
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
     completedAt: z.string(),
+    addedAt: z.string().datetime({ offset: true }),
   }),
   z.object({
     kind: z.literal("Game"),
@@ -45,6 +46,7 @@ const newlibraryApiItemSchema = z.discriminatedUnion("kind", [
     activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
     completedAt: z.string(),
+    addedAt: z.string().datetime({ offset: true }),
   }),
 ])
 
@@ -95,6 +97,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
         completedAt: item.completedAt,
+        addedAt: new Date(item.addedAt).toISOString(),
       }
     case "Game":
       return {
@@ -104,6 +107,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
         completedAt: item.completedAt,
+        addedAt: new Date(item.completedAt).toISOString(),
       }
   }
 }
