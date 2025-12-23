@@ -97,7 +97,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
         completedAt: item.completedAt,
-        addedAt: new Date(item.addedAt).toISOString(),
+        addedAt: item.addedAt ?  new Date(item.addedAt).toISOString() : new Date().toISOString(),
       }
     case "Game":
       return {
@@ -107,7 +107,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
         completedAt: item.completedAt,
-        addedAt: new Date(item.completedAt).toISOString(),
+        addedAt: item.addedAt ?  new Date(item.addedAt).toISOString() : new Date().toISOString(),
       }
   }
 }
