@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
     routing::{delete, get, post, put},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{
     AppState,
@@ -49,13 +50,19 @@ async fn get_challenge(
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct IdResponse {
+    id: String,
+}
+
 async fn create_new_challenge(
     State(state): State<AppState>,
     user: User,
     Json(challenge): Json<NewSharedChallenge>,
-) -> Result<Json<String>, StatusCode> {
+) -> Result<Json<IdResponse>, StatusCode> {
     match create_challenge(&user, &state, &challenge) {
-        Ok(id) => Ok(Json(id)),
+        Ok(id) => Ok(Json(IdResponse { id })),
         Err(err) => Err(map_to_internal_error(err)),
     }
 }
