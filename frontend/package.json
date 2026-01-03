@@ -38,7 +38,7 @@
     "jiti": "2.6.1",
     "npm-run-all2": "^8.0.4",
     "prettier": "^3.5.3",
-    "tailwindcss": "^4.1.17",
+    "tailwindcss": "^4.1.18",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-vue-devtools": "8.0.3",
