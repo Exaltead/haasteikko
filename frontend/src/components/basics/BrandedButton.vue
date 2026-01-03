@@ -1,18 +1,37 @@
 <script lang="ts" setup>
-import IconBack from "@/components/icons/IconBack.vue"
-import IconDelete from "@/components/icons/IconDelete.vue"
-import IconPlus from "@/components/icons/IconPlus.vue"
 import type { IconName } from "@/models/iconName"
 import CustomIcon from "./CustomIcon.vue"
 import { computed } from "vue"
 import LoadingSpinner from "./LoadingSpinner.vue"
 
+type BrandingVariant = "primary" | "secondary"
 
-type ButtonStyle = {
-  isPill?: boolean
-  backgroundColor?: "primary" | "warm-white"
-  bold?: boolean
-  iconColor?: string
+type BrandingVariantConfig = {
+  backgroundColor: string,
+  textColor: string
+  disabledBackgroundColor: string,
+  disabledTextColor: string
+  iconColor: string,
+  disabledIconColor: string
+}
+
+const brandingVariantConfigs: Record<BrandingVariant, BrandingVariantConfig> = {
+  primary: {
+    backgroundColor: "bg-brand-primary",
+    textColor: "text-black",
+    disabledBackgroundColor: "bg-brand-disabled",
+    disabledTextColor: "text-text-disabled",
+    iconColor: "text-white",
+    disabledIconColor: "text-white"
+  },
+  secondary: {
+    backgroundColor: "bg-brand-warm-white",
+    textColor: "text-black",
+    disabledBackgroundColor: "bg-brand-warm-white-200",
+    disabledTextColor: "text-text-disabled",
+    iconColor: "text-brand-primary",
+    disabledIconColor: "text-text-disabled"
+  }
 }
 
 const props = defineProps<{
@@ -21,69 +40,84 @@ const props = defineProps<{
   isSubmitting?: boolean
   icon?: IconName
   disabled?: boolean
-  styling?: ButtonStyle
+  variant: BrandingVariant
+  isPill?: boolean
+  bold?: boolean
 }>()
 
 const backgroundColor = computed(() => {
+  const variantConfig = brandingVariantConfigs[props.variant]
+  if (props.disabled) {
+    return variantConfig.disabledBackgroundColor
+  }
+  return variantConfig.backgroundColor
+  /*if (props.style === "secondary") {
+    return "bg-brand-warm-white"
+  }
+  if (props.style === "tertiary") {}
+
   if (props.styling?.backgroundColor) {
     if (props.styling?.backgroundColor === "warm-white") {
       return "bg-brand-warm-white"
+    }
+    if (props.styling.backgroundColor === "very-light-orange") {
+      return "bg-brand-very-light-orange"
     }
     return "bg-brand-primary"
   }
   if (props.disabled) {
     return "bg-brand-disabled"
   }
-  return "bg-brand-primary"
+  return "bg-brand-primary"*/
 })
 
-function createButtonStyle(disabled: boolean, style: ButtonStyle | undefined) {
-  let baseStyle = "py-1 pl-2 pr-3"
-
-
-  baseStyle = baseStyle + " " + backgroundColor.value
-
-  if (style?.isPill) {
-    baseStyle = baseStyle + " rounded-full border border-brand-black"
-  } else {
-    baseStyle = baseStyle + " rounded border border-brand-black"
+const textColor = computed(() => {
+  const variantConfig = brandingVariantConfigs[props.variant]
+  if (props.disabled) {
+    return variantConfig.disabledTextColor
   }
-
-  if (disabled) {
-    if (!style?.backgroundColor) {
-      baseStyle = baseStyle + " bg-brand-disabled"
-    }
-    baseStyle = baseStyle + " cursor-not-allowed text-text-disabled"
-  } else {
-    baseStyle = baseStyle + " cursor-pointer text-black"
-  }
-  if (style?.bold) {
-    baseStyle = baseStyle + " font-bold"
-  }
-
-  return baseStyle
-}
+  return variantConfig.textColor
+})
 
 const iconStyle = computed(() => {
-  const baseStyle = 'w-[22px] h-fit'
-  if (props.styling?.iconColor) {
-    return baseStyle + ' ' + props.styling.iconColor
+  const variantConfig = brandingVariantConfigs[props.variant]
+  return 'w-[22px] h-fit' + ' ' + (props.disabled ? variantConfig.disabledIconColor : variantConfig.iconColor)
+  /*const variantConfig = brandingVariantConfigs[props.style]
+  if (props.disabled) {
+    return baseStyle + ' ' + variantConfig.disabledTextColor
   }
-  return baseStyle + " text-brand-primary"
+  return baseStyle + ' ' + variantConfig.textColor*/
 })
 
-
+const buttonStyle = computed(() => {
+  const styles = [backgroundColor.value]
+  if (props.isPill) {
+    styles.push("rounded-full")
+  } else {
+    styles.push("rounded")
+  }
+  if (props.disabled) {
+    styles.push("cursor-not-allowed")
+  } else {
+    styles.push("cursor-pointer")
+  }
+  if (props.bold) {
+    styles.push("font-bold")
+  }
+  return styles.join(" ")
+})
 
 </script>
 
 <template>
-  <button @click="onClick" :class="createButtonStyle(disabled ?? false, styling)" type="button" :disabled="disabled">
-    <div class="flex flex-row gap-2 items-center justify-start">
+  <button @click="onClick" class="py-1 px-2 border border-brand-black" :class="buttonStyle" type="button"
+    :disabled="disabled">
+    <div class="flex flex-row gap-1 items-center justify-between">
       <div v-if="isSubmitting">
         <LoadingSpinner :background-color="backgroundColor" />
       </div>
       <CustomIcon v-if="icon && !isSubmitting" :name="icon" :class="iconStyle" />
-      <span v-if="text" class="text-black text-nowrap text-center">{{ text }}</span>
+      <span v-if="text" class="text-nowrap text-center" :class="textColor">{{ text }}</span>
     </div>
   </button>
 </template>

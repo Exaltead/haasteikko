@@ -56,7 +56,7 @@ const questionClusterSizeOptions = [
 
     </div>
     <div class="flex flex-row justify-end">
-      <BrandedButton icon="Delete" class="h-fit" :onClick="() => internalRemoveQuestion()" :styling="{ iconColor: 'text-white'}" />
+      <BrandedButton icon="Delete" class="h-fit" :onClick="() => internalRemoveQuestion()" variant="secondary" />
     </div>
   </div>
 

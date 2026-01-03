@@ -13,12 +13,6 @@ const meta = {
     isSubmitting: false,
     icon: "Author",
     disabled: false,
-    styling: {
-      isPill: false,
-      backgroundColor: "primary",
-      bold: false,
-      iconColor: "white",
-    }
   }
 } satisfies Meta<typeof BrandedButton>;
 
@@ -27,6 +21,55 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
+    variant: "primary",
+  }
+}
 
+export const PrimaryDisabled: Story = {
+  args: {
+    variant: "primary",
+    disabled: true,
+  }
+}
+
+export const PrimaryWithIconOnly: Story = {
+  args: {
+    variant: "primary",
+    text: "",
+    icon: "Plus",
+  }
+}
+
+export const PrimarySubmitting: Story = {
+  args: {
+    variant: "primary",
+    isSubmitting: true,
+  }
+}
+
+export const PillButton: Story = {
+  args: {
+    variant: "primary",
+    isPill: true,
+  }
+}
+
+export const BoldTextButton: Story = {
+  args: {
+    variant: "primary",
+    bold: true,
+  }
+}
+
+export const Secondary: Story = {
+  args: {
+    variant: "secondary",
+  }
+}
+
+export const SecondaryDisabled: Story = {
+  args: {
+    variant: "secondary",
+    disabled: true,
   }
 }

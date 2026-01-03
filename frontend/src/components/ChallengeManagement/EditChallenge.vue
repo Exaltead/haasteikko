@@ -109,7 +109,7 @@ const canSubmit = computed(() => {
         <div class="flex flex-row gap-4 justify-between items-center">
           <TextInput class="basis-4/5" v-model="editTarget.name" name="Nimi" label="Haasteen nimi" />
           <BrandedButton text="Tallenna" :onClick="submit" class="h-fit" :isSubmitting="isSubmitting"
-            :disabled="!canSubmit" />
+            :disabled="!canSubmit"  variant="primary"/>
         </div>
         <div class="flex flex-row gap-4">
           <label for="kind"> Haasteeseen soveltuvat: </label>

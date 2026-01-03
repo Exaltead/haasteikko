@@ -22,7 +22,7 @@ const answersMap = ref<Map<string, Answer>>(new Map([]))
 const questions = ref<Question[]>([])
 const challengeName = ref<string>("Haaste")
 async function refreshData(): Promise<void> {
-  const  answers = await answerApiClient.searchAnswers({ challengeId: props.challengeId, itemId: props.itemId})
+  const answers = await answerApiClient.searchAnswers({ challengeId: props.challengeId, itemId: props.itemId })
   const challenge = (await challengeApiClient.fetchChallenges())
     .find(t => t.id === props.challengeId)
   if (challenge) {
@@ -122,7 +122,7 @@ async function submit() {
 
     <div class="flex flex-row gap-2 justify-between items-center bg-light-gray p-2">
       <h1>{{ challengeName }}</h1>
-      <BrandedButton text="Tallenna" class="mt-4" @click="submit" :isSubmitting="isSubmitting" />
+      <BrandedButton text="Tallenna" class="mt-4" @click="submit" :isSubmitting="isSubmitting" variant="primary" />
     </div>
 
     <div v-for="(displayAnswer, index) in displayAnswers" :key="index" class="bg-light-gray p-2">

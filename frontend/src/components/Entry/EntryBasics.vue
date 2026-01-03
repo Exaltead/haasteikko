@@ -115,8 +115,8 @@ function onChallengeStateChanged(challengeIds: string[]) {
       </div>
 
       <div class="flex flex-row gap-2 py-3">
-        <Button :onClick="cancelEdit" text="Peruuta"></Button>
-        <Button :onClick="submit" text="Tallenna"></Button>
+        <Button :onClick="cancelEdit" text="Peruuta" variant="secondary"></Button>
+        <Button :onClick="submit" text="Tallenna" variant="primary"></Button>
       </div>
     </div>
     <div v-else>
@@ -131,8 +131,9 @@ function onChallengeStateChanged(challengeIds: string[]) {
           <p>Kirjailija: {{ item.creator }}</p>
         </div>
         <div class="flex flex-row gap-2 align-top justify-start">
-          <Button :onClick="enableEditMode" text="Muokkaa" :isSubmitting="isSubmitting"></Button>
-          <Button :onClick="deleteItem" text="Poista" icon="Delete" :isSubmitting="isDeleting"></Button>
+          <Button :onClick="enableEditMode" text="Muokkaa" :isSubmitting="isSubmitting" variant="primary"></Button>
+          <Button :onClick="deleteItem" text="Poista" icon="Delete" :isSubmitting="isDeleting"
+            variant="secondary"></Button>
         </div>
       </div>
 

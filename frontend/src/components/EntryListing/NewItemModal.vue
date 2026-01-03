@@ -76,27 +76,27 @@ function closeModal(): void {
 }
 
 async function submitModal(): Promise<void> {
-  function toItem(): Omit<LibraryItem, "id"|"addedAt"> {
+  function toItem(): Omit<LibraryItem, "id" | "addedAt"> {
     if (kind.value === 'Book') {
-      const newBook: Omit<Book, "id"| "addedAt"> = {
+      const newBook: Omit<Book, "id" | "addedAt"> = {
         kind: "Book",
         title: bookModel.value.name,
         author: bookModel.value.author,
         translator: bookModel.value.translator,
         activatedChallengeIds: [],
         favorite: false,
-        completedAt: Date.now().toLocaleString()
+        completedAt: new Date().toISOString()
       }
       return newBook
     }
     if (kind.value === 'Game') {
-      const newGame: Omit<Game, "id"| "addedAt"> = {
+      const newGame: Omit<Game, "id" | "addedAt"> = {
         kind: 'Game',
         title: gameModel.value.title,
         creator: gameModel.value.creator,
         activatedChallengeIds: [],
         favorite: false,
-        completedAt: Date.now().toLocaleString()
+        completedAt: new Date().toISOString()
       }
 
       return newGame
@@ -145,17 +145,9 @@ const kinds = [
           <TextInput name="author" label="Tekijä" :required="true" v-model="gameModel.creator" icon="Author" />
         </div>
         <div class="flex flex-row justify-between py-2 gap-3">
-          <BrandedButton :onClick="closeModal" text="Peru" icon="Cross" :styling="{
-            isPill: true,
-            bold: true,
-            iconColor: 'text-white'
-          }" />
+          <BrandedButton :onClick="closeModal" text="Peru" icon="Cross" :is-pill="true" variant="secondary" />
           <BrandedButton :onClick="submitModal" :disabled="isInvalidValid" text="Tallenna" icon="Check"
-            :is-submitting="isSubmitting" :styling="{
-              isPill: true,
-              bold: true,
-              iconColor: 'text-white'
-            }" />
+            :is-submitting="isSubmitting" :is-pill="true" :bold="true" variant="primary" />
         </div>
       </div>
     </form>

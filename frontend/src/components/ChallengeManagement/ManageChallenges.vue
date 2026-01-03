@@ -15,7 +15,7 @@ function handleEdit(challenge: Challenge): void {
 
 <template>
   <div class="p-10">
-    <BrandedButton text="Luo uusi haaste" :onClick="() => emit('create-challenge')" />
+    <BrandedButton text="Luo uusi haaste" icon="Plus" :onClick="() => emit('create-challenge')" variant="primary"/>
     <div class="flex items-center justify-center">
       <ul class="flex flex-col gap-4">
         <li v-for="challenge in challenges" :key="challenge.id">
@@ -24,7 +24,8 @@ function handleEdit(challenge: Challenge): void {
               <span class="font-bold text-xl">{{ challenge.name }}</span>
             </div>
             <div class="flex flex-row justify-end w-full">
-              <BrandedButton text="Muokkaa" :onClick="() => { handleEdit(challenge) }" />
+              <BrandedButton text="Muokkaa" :onClick="() => { handleEdit(challenge) }" variant="primary"/>
+
             </div>
 
           </div>

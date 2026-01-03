@@ -197,7 +197,7 @@ const questionToAnswersMap = computed(() => {
 
 <template>
   <div>
-    <BrandedButton @click="$router.back()" class="mt-4 ml-4 md:mt-14 md:ml-14 w-fit" icon="Back" />
+    <BrandedButton @click="$router.back()" class="mt-4 ml-4 md:mt-14 md:ml-14 w-fit" icon="Back" variant="primary" />
     <div v-if="loading">
       <h1>Ladataan...</h1>
     </div>
@@ -229,7 +229,7 @@ const questionToAnswersMap = computed(() => {
         </ul>
         <div class="flex flex-row justify-start w-full">
           <BrandedButton @click="() => submitSolution()" class="mb-4 w-fit" text="Tallenna"
-            :isSubmitting="isSubmitting" />
+            :isSubmitting="isSubmitting" variant="primary" />
         </div>
 
       </div>
