@@ -114,62 +114,73 @@ async function onItemUpdated() {
 </script>
 
 <template>
-  <div class="p-4 md:p-8 flex flex-col gap-4">
-    <div class="bg-brand-warm-white rounded-lg p-4">
-      <RouterLink :to="{ name: 'challenges' }" class="flex flex-row items-center gap-1 mb-2 w-fit">
-        <h2 class="text-lg font-bold">Käynnissä olevat haasteet</h2>
-        <IconChevronRight class="h-5 w-5 text-brand-orange" />
-      </RouterLink>
-
-      <div v-if="loading" class="flex justify-center py-8">
-        <LoadingSpinner />
-      </div>
-
-      <div v-else-if="activeChallenges.length === 0" class="text-center py-4">
-        <p class="text-gray-500">Ei aktiivisia haasteita</p>
-      </div>
-
-      <div v-else class="flex flex-wrap gap-3 justify-center md:justify-start">
-        <ChallengeCard
-          v-for="challenge in activeChallenges"
-          :key="challenge.id"
-          :challenge="challenge"
-          :completed-count="getCompletedCount(challenge)"
-          :total-count="getTotalCount(challenge)"
-          :attached-item-count="getAttachedItemCount(challenge)"
-        />
-      </div>
-    </div>
-
-    <div class="bg-brand-warm-white rounded-lg p-4">
-      <div class="flex flex-row justify-between items-center mb-2">
-        <RouterLink :to="{ name: 'library' }" class="flex flex-row items-center gap-1 group">
-          <h2 class="text-lg font-bold">Kirjasto</h2>
+  <div class="p-4 md:p-8">
+    <div class="flex flex-col lg:flex-row gap-4 lg:gap-0 bg-brand-warm-white rounded-lg">
+      <!-- Challenges section -->
+      <div class="p-4 lg:flex-1">
+        <RouterLink :to="{ name: 'challenges' }" class="flex flex-row items-center gap-1 mb-2 w-fit">
+          <h2 class="text-lg font-bold">Käynnissä olevat haasteet</h2>
           <IconChevronRight class="h-5 w-5 text-brand-orange" />
         </RouterLink>
-        <BrandedButton
-          text="Lisää uusi"
-          :onClick="openNewItemModal"
-          icon="Plus"
-          :isPill="true"
-          variant="primary"
-          :bold="true"
+
+        <div v-if="loading" class="flex justify-center py-8">
+          <LoadingSpinner />
+        </div>
+
+        <div v-else-if="activeChallenges.length === 0" class="text-center py-4">
+          <p class="text-gray-500">Ei aktiivisia haasteita</p>
+        </div>
+
+        <div v-else class="flex flex-wrap gap-3 justify-center lg:justify-start">
+          <ChallengeCard
+            v-for="challenge in activeChallenges"
+            :key="challenge.id"
+            :challenge="challenge"
+            :completed-count="getCompletedCount(challenge)"
+            :total-count="getTotalCount(challenge)"
+            :attached-item-count="getAttachedItemCount(challenge)"
+          />
+        </div>
+      </div>
+
+      <!-- Vertical divider -->
+      <div class="hidden lg:block w-px bg-gray-300 my-6" />
+
+      <!-- Horizontal divider for mobile -->
+      <div class="lg:hidden h-px bg-gray-300 mx-4" />
+
+      <!-- Library section -->
+      <div class="p-4 lg:flex-1">
+        <div class="flex flex-row justify-between items-center mb-2">
+          <RouterLink :to="{ name: 'library' }" class="flex flex-row items-center gap-1 group">
+            <h2 class="text-lg font-bold">Kirjasto</h2>
+            <IconChevronRight class="h-5 w-5 text-brand-orange" />
+          </RouterLink>
+          <BrandedButton
+            text="Lisää uusi"
+            :onClick="openNewItemModal"
+            icon="Plus"
+            :isPill="true"
+            variant="primary"
+            :bold="true"
+          />
+        </div>
+
+        <div v-if="loading" class="flex justify-center py-8">
+          <LoadingSpinner />
+        </div>
+
+        <div v-else-if="recentLibraryItems.length === 0" class="text-center py-4">
+          <p class="text-gray-500">Ei kirjoja tai pelejä</p>
+        </div>
+
+        <EntryListing
+          v-else
+          :items="recentLibraryItems"
+          :singleColumn="true"
+          @itemUpdated="onItemUpdated"
         />
       </div>
-
-      <div v-if="loading" class="flex justify-center py-8">
-        <LoadingSpinner />
-      </div>
-
-      <div v-else-if="recentLibraryItems.length === 0" class="text-center py-4">
-        <p class="text-gray-500">Ei kirjoja tai pelejä</p>
-      </div>
-
-      <EntryListing
-        v-else
-        :items="recentLibraryItems"
-        @itemUpdated="onItemUpdated"
-      />
     </div>
 
     <NewItemModal
