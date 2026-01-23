@@ -9,10 +9,12 @@ const props = withDefaults(
     items: LibraryItem[]
     yearFilter?: YearFilterOption
     typeFilter?: EntryTypeFilter[]
+    singleColumn?: boolean
   }>(),
   {
     yearFilter: "all",
     typeFilter: () => ["Book", "Game"],
+    singleColumn: false,
   },
 )
 
@@ -68,7 +70,7 @@ function onItemUpdated() {
 
 <template>
   <div>
-    <div class="grid md:grid-cols-2 w-full gap-3">
+    <div class="grid w-full gap-3" :class="singleColumn ? '' : 'md:grid-cols-2'">
       <LibraryItemCard
         v-for="entry in listItems"
         :key="entry.id"
