@@ -48,6 +48,11 @@ function doLogout() {
       <div class="md:flex md:flex-row p-4 md:py-0 md:gap-10 items-center">
         <div class="h-fit">
           <RouterLink :to="{ name: 'home' }" class="text-white">
+            <span class="cursor-pointer">Koti</span>
+          </RouterLink>
+        </div>
+        <div class="h-fit">
+          <RouterLink :to="{ name: 'library' }" class="text-white">
             <span class="cursor-pointer">Kirjasto</span>
           </RouterLink>
         </div>

@@ -5,6 +5,7 @@ import LoginView from "@/views/LoginView.vue"
 import ChallengeManagementView from "@/views/ChallengeManagementView.vue"
 import ChallengeSolutionView from "@/views/ChallengeSolutionView.vue"
 import OverallChallengesView from "@/views/OverallChallengesView.vue"
+import HomeView from "@/views/HomeView.vue"
 import { authGuard } from "@auth0/auth0-vue"
 
 const router = createRouter({
@@ -19,6 +20,12 @@ const router = createRouter({
     {
       path: "/home",
       name: "home",
+      component: HomeView,
+      beforeEnter: authGuard,
+    },
+    {
+      path: "/library",
+      name: "library",
       component: EntryListingView,
       beforeEnter: authGuard,
     },
