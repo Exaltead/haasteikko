@@ -7,6 +7,7 @@ mod challenge_answers;
 mod database;
 mod library;
 mod migrations;
+mod preferences;
 mod solution;
 mod utils;
 
@@ -57,6 +58,7 @@ async fn main() {
         .nest("/api", challenge::routes())
         .nest("/api", solution::routes())
         .nest("/api", challenge_answers::routes())
+        .nest("/api", preferences::routes())
         .with_state(app_state)
         // For local development, disallow when deploying
         .layer(cors);
