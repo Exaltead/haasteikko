@@ -116,7 +116,10 @@ async function onItemUpdated() {
 <template>
   <div class="p-4 md:p-8 flex flex-col gap-4">
     <div class="bg-brand-warm-white rounded-lg p-4">
-      <h2 class="text-lg font-bold mb-2">Käynnissä olevat haasteet</h2>
+      <RouterLink :to="{ name: 'challenges' }" class="flex flex-row items-center gap-1 mb-2 w-fit">
+        <h2 class="text-lg font-bold">Käynnissä olevat haasteet</h2>
+        <IconChevronRight class="h-5 w-5 text-brand-orange" />
+      </RouterLink>
 
       <div v-if="loading" class="flex justify-center py-8">
         <LoadingSpinner />

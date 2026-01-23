@@ -51,24 +51,6 @@ const backgroundColor = computed(() => {
     return variantConfig.disabledBackgroundColor
   }
   return variantConfig.backgroundColor
-  /*if (props.style === "secondary") {
-    return "bg-brand-warm-white"
-  }
-  if (props.style === "tertiary") {}
-
-  if (props.styling?.backgroundColor) {
-    if (props.styling?.backgroundColor === "warm-white") {
-      return "bg-brand-warm-white"
-    }
-    if (props.styling.backgroundColor === "very-light-orange") {
-      return "bg-brand-very-light-orange"
-    }
-    return "bg-brand-primary"
-  }
-  if (props.disabled) {
-    return "bg-brand-disabled"
-  }
-  return "bg-brand-primary"*/
 })
 
 const textColor = computed(() => {
@@ -81,18 +63,21 @@ const textColor = computed(() => {
 
 const iconStyle = computed(() => {
   const variantConfig = brandingVariantConfigs[props.variant]
-  return 'w-[22px] h-fit' + ' ' + (props.disabled ? variantConfig.disabledIconColor : variantConfig.iconColor)
-  /*const variantConfig = brandingVariantConfigs[props.style]
-  if (props.disabled) {
-    return baseStyle + ' ' + variantConfig.disabledTextColor
-  }
-  return baseStyle + ' ' + variantConfig.textColor*/
+  const size = isIconOnly.value && props.isPill ? 'w-5 h-5' : 'w-[22px] h-fit'
+  return size + ' ' + (props.disabled ? variantConfig.disabledIconColor : variantConfig.iconColor)
+})
+
+const isIconOnly = computed(() => {
+  return props.icon && !props.text
 })
 
 const buttonStyle = computed(() => {
   const styles = [backgroundColor.value]
   if (props.isPill) {
     styles.push("rounded-full")
+    if (isIconOnly.value) {
+      styles.push("p-1")
+    }
   } else {
     styles.push("rounded")
   }
@@ -110,8 +95,13 @@ const buttonStyle = computed(() => {
 </script>
 
 <template>
-  <button @click="onClick" class="py-1 px-2 border border-brand-black" :class="buttonStyle" type="button"
-    :disabled="disabled">
+  <button
+    @click="onClick"
+    class="border border-brand-black"
+    :class="[buttonStyle, isIconOnly && isPill ? '' : 'py-1 px-2']"
+    type="button"
+    :disabled="disabled"
+  >
     <div class="flex flex-row gap-1 items-center justify-between">
       <div v-if="isSubmitting">
         <LoadingSpinner :background-color="backgroundColor" />
