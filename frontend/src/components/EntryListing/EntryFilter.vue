@@ -43,7 +43,7 @@ function toggleType(type: EntryTypeFilter): void {
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 px-4 py-2 bg-brand-warm-white">
+  <div class="flex flex-col gap-2 px-4 md:px-15 py-2 bg-brand-warm-white">
     <BrandedSelect v-model="yearFilter" :options="yearFilterOptions" title="Vuosi" />
 
     <div class="flex flex-row gap-4">

@@ -117,10 +117,10 @@ function toggleFilter(): void {
 <template>
   <main>
     <div></div>
-    <div class="flex flex-col gap-3 w-full h-full md:px-15">
+    <div class="flex flex-col gap-3 w-full h-full">
       <div class="flex flex-col">
         <div
-          class="flex flex-row justify-between md:justify-start items-center py-2 px-4 gap-10 bg-brand-warm-white"
+          class="flex flex-row justify-between md:justify-start items-center py-2 px-4 md:px-15 gap-10 bg-brand-warm-white"
         >
           <BrandedButton icon="Filter" :onClick="toggleFilter" :isPill="true" variant="secondary" />
           <BrandedButton
@@ -141,7 +141,7 @@ function toggleFilter(): void {
       </div>
 
       <EntryListing
-        class="px-1"
+        class="px-1 md:px-15"
         :items="items"
         :yearFilter="yearFilter"
         :typeFilter="typeFilter"
