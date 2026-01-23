@@ -5,7 +5,11 @@ import BrandedButton from "@/components/basics/BrandedButton.vue"
 import NewItemModal from "@/components/EntryListing/NewItemModal.vue"
 import { ref, watch, onMounted, computed } from "vue"
 import { useRouter } from "vue-router"
-import { usePreferencesApi, type YearFilterOption } from "@/api/preferencesApiClient"
+import {
+  usePreferencesApi,
+  type YearFilterOption,
+  type EntryTypeFilter,
+} from "@/api/preferencesApiClient"
 import { useLibraryApi } from "@/api/libraryApiClient"
 import type { LibraryItem } from "@/models/LibraryItem"
 
@@ -15,8 +19,10 @@ const libraryApi = useLibraryApi()
 
 const showFilter = ref(false)
 const yearFilter = ref<YearFilterOption>("all")
+const typeFilter = ref<EntryTypeFilter[]>(["Book", "Game"])
 const items = ref<LibraryItem[]>([])
-const savedPreference = ref<string | null | undefined>(undefined)
+const savedYearPreference = ref<string | null | undefined>(undefined)
+const savedTypePreference = ref<string[] | null | undefined>(undefined)
 
 const currentYear = new Date().getFullYear()
 
@@ -37,24 +43,36 @@ onMounted(async () => {
 
   try {
     const preferences = await preferencesApi.getPreferences()
-    savedPreference.value = preferences.libraryYearFilter
-    applyPreference()
+    savedYearPreference.value = preferences.libraryYearFilter
+    savedTypePreference.value = preferences.libraryTypeFilter
+    applyPreferences()
   } catch {
     // Use default if preferences can't be loaded
   }
 })
 
-function applyPreference() {
-  if (savedPreference.value === undefined) return
-
-  if (savedPreference.value === "all" || savedPreference.value === null) {
-    yearFilter.value = "all"
-  } else {
-    const year = parseInt(savedPreference.value, 10)
-    if (!isNaN(year) && (year === currentYear || availableYears.value.includes(year))) {
-      yearFilter.value = year
-    } else {
+function applyPreferences() {
+  // Apply year filter preference
+  if (savedYearPreference.value !== undefined) {
+    if (savedYearPreference.value === "all" || savedYearPreference.value === null) {
       yearFilter.value = "all"
+    } else {
+      const year = parseInt(savedYearPreference.value, 10)
+      if (!isNaN(year) && (year === currentYear || availableYears.value.includes(year))) {
+        yearFilter.value = year
+      } else {
+        yearFilter.value = "all"
+      }
+    }
+  }
+
+  // Apply type filter preference
+  if (savedTypePreference.value !== undefined && savedTypePreference.value !== null) {
+    const validTypes = savedTypePreference.value.filter(
+      (t): t is EntryTypeFilter => t === "Book" || t === "Game",
+    )
+    if (validTypes.length > 0) {
+      typeFilter.value = validTypes
     }
   }
 }
@@ -62,6 +80,14 @@ function applyPreference() {
 watch(yearFilter, async (newValue) => {
   try {
     await preferencesApi.updatePreferences({ libraryYearFilter: String(newValue) })
+  } catch {
+    // Silently fail on preference save
+  }
+})
+
+watch(typeFilter, async (newValue) => {
+  try {
+    await preferencesApi.updatePreferences({ libraryTypeFilter: newValue })
   } catch {
     // Silently fail on preference save
   }
@@ -96,12 +122,7 @@ function toggleFilter(): void {
         <div
           class="flex flex-row justify-between md:justify-start items-center py-2 px-4 gap-10 bg-brand-warm-white"
         >
-          <BrandedButton
-            icon="Filter"
-            :onClick="toggleFilter"
-            :isPill="true"
-            variant="secondary"
-          />
+          <BrandedButton icon="Filter" :onClick="toggleFilter" :isPill="true" variant="secondary" />
           <BrandedButton
             text="Lisää uusi"
             :onClick="createNew"
@@ -114,6 +135,7 @@ function toggleFilter(): void {
         <EntryFilter
           v-if="showFilter"
           v-model:yearFilter="yearFilter"
+          v-model:typeFilter="typeFilter"
           :availableYears="availableYears"
         />
       </div>
@@ -122,6 +144,7 @@ function toggleFilter(): void {
         class="px-1"
         :items="items"
         :yearFilter="yearFilter"
+        :typeFilter="typeFilter"
         @itemUpdated="fetchItems"
       />
       <NewItemModal

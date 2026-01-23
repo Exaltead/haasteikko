@@ -1,17 +1,19 @@
 <script lang="ts" setup>
 import { computed } from "vue"
 import type { LibraryItem } from "@/models/LibraryItem"
-import type { YearFilterOption } from "@/api/preferencesApiClient"
+import type { YearFilterOption, EntryTypeFilter } from "@/api/preferencesApiClient"
 import LibraryItemCard from "./LibraryItemCard.vue"
 
 const props = withDefaults(
   defineProps<{
     items: LibraryItem[]
     yearFilter?: YearFilterOption
+    typeFilter?: EntryTypeFilter[]
   }>(),
   {
     yearFilter: "all",
-  }
+    typeFilter: () => ["Book", "Game"],
+  },
 )
 
 const emit = defineEmits<{
@@ -23,8 +25,12 @@ const listItems = computed(() => {
 
   if (props.yearFilter !== "all") {
     filteredItems = filteredItems.filter(
-      (item) => new Date(item.addedAt).getFullYear() === props.yearFilter
+      (item) => new Date(item.addedAt).getFullYear() === props.yearFilter,
     )
+  }
+
+  if (props.typeFilter.length > 0) {
+    filteredItems = filteredItems.filter((item) => props.typeFilter.includes(item.kind))
   }
 
   const sortedItems = filteredItems.sort((a, b) => {

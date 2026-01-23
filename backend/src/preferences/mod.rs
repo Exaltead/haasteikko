@@ -20,6 +20,7 @@ mod repository;
 #[serde(rename_all = "camelCase")]
 pub struct UserPreferences {
     pub library_year_filter: Option<String>,
+    pub library_type_filter: Option<Vec<String>>,
 }
 
 pub struct PreferencesRepository {

@@ -4,11 +4,14 @@ import { useHttpApi } from "@/plugins/HttpPlugin"
 
 const userPreferencesSchema = z.object({
   libraryYearFilter: z.string().nullable().optional(),
+  libraryTypeFilter: z.array(z.string()).nullable().optional(),
 })
 
 export type UserPreferences = z.infer<typeof userPreferencesSchema>
 
 export type YearFilterOption = "all" | number
+
+export type EntryTypeFilter = "Book" | "Game"
 
 class PreferencesApiClient {
   private proxy: HttpProxy
