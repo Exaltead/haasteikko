@@ -6,6 +6,11 @@ import CustomIcon from '../basics/CustomIcon.vue';
 import { ref } from 'vue';
 import { useLibraryApi } from '@/api/libraryApiClient';
 
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString("fi-FI")
+}
+
 const libraryApi = useLibraryApi()
 const props = defineProps<{
   item: LibraryItem
@@ -34,7 +39,7 @@ async function updateItemFavorite(): Promise<void> {
   <div class="card flex flex-col items-center justify-start md:max-w-[400px] min-w-[250px] w-full p-2.5 pt-2 gap-2">
     <div class="flex flex-row justify-between items-center w-full px-2.5 py-1 border-b border-brand-orange">
       <div class="flex flex-row justify-between gap-2 items-center">
-        <span class="font-bold">{{`#${orderingNumber}`}}</span>
+        <span class="font-bold">{{ `#${orderingNumber}` }}</span>
         <IconedText v-if="item.kind === 'Book'" :text="` ${item.title}`" :icon-name="'Book'" :heading="true" />
         <IconedText v-if="item.kind === 'Game'" :text="item.title" :icon-name="'Game'" :heading="true" />
       </div>
@@ -60,7 +65,9 @@ async function updateItemFavorite(): Promise<void> {
 
       </div>
     </RouterLink>
-
+    <div class="w-full text-right px-1 -mt-2">
+      <span class="text-xs text-gray-400">{{ formatDate(item.completedAt) }}</span>
+    </div>
   </div>
 
 </template>
