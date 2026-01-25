@@ -9,11 +9,13 @@ const props = withDefaults(
     items: LibraryItem[]
     yearFilter?: YearFilterOption
     typeFilter?: EntryTypeFilter[]
+    searchQuery?: string
     singleColumn?: boolean
   }>(),
   {
     yearFilter: "all",
     typeFilter: () => ["Book", "Game"],
+    searchQuery: "",
     singleColumn: false,
   },
 )
@@ -22,8 +24,25 @@ const emit = defineEmits<{
   itemUpdated: []
 }>()
 
+function matchesSearch(item: LibraryItem, query: string): boolean {
+  const searchLower = query.toLowerCase()
+  if (item.title.toLowerCase().includes(searchLower)) return true
+  if (item.kind === "Book") {
+    if (item.author.toLowerCase().includes(searchLower)) return true
+    if (item.translator?.toLowerCase().includes(searchLower)) return true
+  }
+  if (item.kind === "Game") {
+    if (item.creator.toLowerCase().includes(searchLower)) return true
+  }
+  return false
+}
+
 const listItems = computed(() => {
   let filteredItems = [...props.items]
+
+  if (props.searchQuery) {
+    filteredItems = filteredItems.filter((item) => matchesSearch(item, props.searchQuery))
+  }
 
   if (props.yearFilter !== "all") {
     filteredItems = filteredItems.filter(

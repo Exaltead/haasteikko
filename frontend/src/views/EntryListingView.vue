@@ -3,6 +3,7 @@ import EntryFilter from "@/components/EntryListing/EntryFilter.vue"
 import EntryListing from "../components/EntryListing/EntryListing.vue"
 import BrandedButton from "@/components/basics/BrandedButton.vue"
 import NewItemModal from "@/components/EntryListing/NewItemModal.vue"
+import SearchBar from "@/components/EntryListing/SearchBar.vue"
 import { ref, watch, onMounted, computed } from "vue"
 import { useRouter } from "vue-router"
 import {
@@ -20,6 +21,7 @@ const libraryApi = useLibraryApi()
 const showFilter = ref(false)
 const yearFilter = ref<YearFilterOption>("all")
 const typeFilter = ref<EntryTypeFilter[]>(["Book", "Game"])
+const searchQuery = ref("")
 const items = ref<LibraryItem[]>([])
 const savedYearPreference = ref<string | null | undefined>(undefined)
 const savedTypePreference = ref<string[] | null | undefined>(undefined)
@@ -120,8 +122,9 @@ function toggleFilter(): void {
     <div class="flex flex-col gap-3 w-full h-full">
       <div class="flex flex-col">
         <div
-          class="flex flex-row justify-between md:justify-start items-center py-2 px-4 md:px-15 gap-10 bg-brand-warm-white"
+          class="flex flex-row justify-between md:justify-start items-center py-2 px-4 md:px-15 gap-4 md:gap-10 bg-brand-warm-white"
         >
+          <SearchBar v-model="searchQuery" />
           <BrandedButton icon="Filter" :onClick="toggleFilter" :isPill="true" variant="secondary" />
           <BrandedButton
             text="Lisää uusi"
@@ -145,6 +148,7 @@ function toggleFilter(): void {
         :items="items"
         :yearFilter="yearFilter"
         :typeFilter="typeFilter"
+        :searchQuery="searchQuery"
         @itemUpdated="fetchItems"
       />
       <NewItemModal
