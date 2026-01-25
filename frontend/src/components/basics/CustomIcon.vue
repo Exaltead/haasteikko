@@ -14,6 +14,7 @@ import IconGame from '../icons/IconGame.vue';
 import IconFilter from '../icons/IconFilter.vue';
 import IconHome from '../icons/IconHome.vue';
 import IconSearch from '../icons/IconSearch.vue';
+import IconCalendar from '../icons/IconCalendar.vue';
 
 defineProps<{
   name: IconName
@@ -37,5 +38,6 @@ defineProps<{
   <IconFilter v-else-if="name === 'Filter'" />
   <IconHome v-else-if="name === 'Home'" />
   <IconSearch v-else-if="name === 'Search'" />
+  <IconCalendar v-else-if="name === 'Calendar'" />
 
 </template>
