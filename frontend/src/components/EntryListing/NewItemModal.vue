@@ -6,6 +6,7 @@ import TextInput from "@/components/basics/TextInput.vue"
 import type { Book, Game, LibraryItem } from '@/models/LibraryItem';
 import { useLibraryApi } from '@/api/libraryApiClient';
 import BrandedSelect from '@/components/basics/BrandedSelect.vue';
+import DatePicker from '@/components/basics/DatePicker.vue';
 
 
 const libraryApi = useLibraryApi()
@@ -45,6 +46,7 @@ type ValidKinds = "Book" | "Game"
 const bookModel = ref<NewBook>({ ...newBookBase })
 const gameModel = ref<NewGame>({ ...newGameBase })
 const kind = ref<ValidKinds>("Book")
+const completedAt = ref<Date>(new Date())
 
 const isSubmitting = ref(false)
 
@@ -68,6 +70,7 @@ const isInvalidValid = computed(() => {
 function resetState() {
   bookModel.value = { ...newBookBase }
   gameModel.value = { ...newGameBase }
+  completedAt.value = new Date()
 }
 
 function closeModal(): void {
@@ -85,7 +88,7 @@ async function submitModal(): Promise<void> {
         translator: bookModel.value.translator,
         activatedChallengeIds: [],
         favorite: false,
-        completedAt: new Date().toISOString()
+        completedAt: completedAt.value.toISOString()
       }
       return newBook
     }
@@ -96,7 +99,7 @@ async function submitModal(): Promise<void> {
         creator: gameModel.value.creator,
         activatedChallengeIds: [],
         favorite: false,
-        completedAt: new Date().toISOString()
+        completedAt: completedAt.value.toISOString()
       }
 
       return newGame
@@ -144,6 +147,7 @@ const kinds = [
           <TextInput name="name" label="Nimi" v-model="gameModel.title" icon="Game" />
           <TextInput name="author" label="Tekijä" :required="true" v-model="gameModel.creator" icon="Author" />
         </div>
+        <DatePicker v-model="completedAt" label="Päiväys" icon="Calendar" />
         <div class="flex flex-row justify-between py-2 gap-3">
           <BrandedButton :onClick="closeModal" text="Peru" icon="Cross" :is-pill="true" variant="secondary" />
           <BrandedButton :onClick="submitModal" :disabled="isInvalidValid" text="Tallenna" icon="Check"
