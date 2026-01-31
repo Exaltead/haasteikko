@@ -23,7 +23,9 @@ test("User can save a book with isolated test user", async ({ authenticatedPage 
   await authenticatedPage.getByLabel("Nimi").fill(bookName)
   await authenticatedPage.getByLabel("Kirjailija").fill("Test Author")
 
-  await authenticatedPage.getByRole("button", { name: "Tallenna" }).click()
+  const saveButton = authenticatedPage.getByRole("button", { name: "Tallenna" })
+  await expect(saveButton).toBeEnabled()
+  await saveButton.click()
 
   await expect(authenticatedPage).toHaveURL(/library\/\d+/)
   await expect(authenticatedPage.getByText(bookName)).toBeVisible()

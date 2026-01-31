@@ -60,7 +60,7 @@ async function createToken(userId: string, audience: string): Promise<string> {
   })
     .setProtectedHeader({ alg: "RS256", kid: keyPair.kid })
     .setIssuer(ISSUER)
-    .setAudience(audience)
+    .setAudience([audience])
     .setIssuedAt()
     .setExpirationTime("1h")
     .sign(keyPair.privateKey)
@@ -73,6 +73,7 @@ async function startServer(): Promise<void> {
 
   const app = express()
   app.use(express.json())
+  app.use(express.urlencoded({ extended: false }))
 
   // CORS for frontend
   app.use((_req, res, next) => {
