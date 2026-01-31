@@ -3,8 +3,8 @@
  *
  * This provides a minimal OIDC-compatible server that:
  * 1. Serves JWKS for backend JWT validation
- * 2. Provides direct token generation for tests (bypassing full OAuth flow)
- * 3. Handles basic OIDC discovery
+ * 2. Implements the authorization code flow (auto-approves for testing)
+ * 3. Handles OIDC discovery
  */
 
 import express from "express"
@@ -175,25 +175,6 @@ async function startServer(): Promise<void> {
     })
   })
 
-  // Direct token generation endpoint for E2E tests
-  // This bypasses the OAuth flow entirely
-  app.post("/test/token", async (req, res) => {
-    const { userId, audience } = req.body
-
-    if (!userId) {
-      res.status(400).json({ error: "userId is required" })
-      return
-    }
-
-    try {
-      const token = await createToken(userId, audience || "https://haasteikko.eu/api")
-      res.json({ token })
-    } catch (error) {
-      console.error("Test token creation error:", error)
-      res.status(500).json({ error: "Failed to create token" })
-    }
-  })
-
   // Health check
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", issuer: ISSUER })
@@ -207,7 +188,7 @@ async function startServer(): Promise<void> {
     console.log(`  JWKS:      ${ISSUER}/.well-known/jwks.json`)
     console.log(`  Authorize: ${ISSUER}/authorize`)
     console.log(`  Token:     ${ISSUER}/token`)
-    console.log(`  Test:      ${ISSUER}/test/token (POST with {userId})`)
+    console.log(`  Health:    ${ISSUER}/health`)
   })
 }
 
