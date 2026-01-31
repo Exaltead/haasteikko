@@ -1,13 +1,11 @@
 <script lang="ts" setup>
 
 import BrandedButton from '@/components/basics/BrandedButton.vue';
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuth, getPostLoginRedirect } from '@/plugins/AuthService';
 import { watch, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-
-
-const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
+const { loginWithRedirect, handleCallback, isAuthenticated, isLoading } = useAuth();
 const router = useRouter()
 const route = useRoute()
 
@@ -24,44 +22,44 @@ async function navigateHomeOnce() {
   await router.isReady()
   await nextTick()
 
-  await router.replace({ name: 'home' })
-
+  // Check if there's a stored redirect path from before login
+  const redirectPath = getPostLoginRedirect()
+  if (redirectPath) {
+    await router.replace(redirectPath)
+  } else {
+    await router.replace({ name: 'home' })
+  }
 }
 
-// If auth0 is already processing (redirect callback) there will be a short loading
-// period. Wait until loading finishes and the user is authenticated before
-// navigating to the protected 'home' route. Use replace so we don't leave the
-// login page in history.
+// Handle OAuth callback if we have code/state in URL
+async function handleOAuthCallback() {
+  const hasRedirectParams = Boolean(route.query.code || route.query.state)
+  if (hasRedirectParams) {
+    try {
+      await handleCallback()
+      void navigateHomeOnce()
+    } catch (error) {
+      console.error('OAuth callback failed:', error)
+    }
+  }
+}
+
+// Watch for auth state changes
 watch(
   [isAuthenticated, isLoading],
   ([auth, loading]) => {
-    // If we are in the OAuth redirect URL (contains code/state) the auth
-    // plugin or router may perform a cleanup navigation; wait until that is
-    // finished to avoid racing and causing our navigation to be cancelled.
     if (!loading && auth) {
-      const hasRedirectParams = Boolean(route.query.code || route.query.state)
-      if (hasRedirectParams) {
-        console.log('Detected redirect params in URL; waiting for router cleanup')
-        // watch the route and navigate once query params are gone
-        const stop = watch(
-          () => route.fullPath,
-          () => {
-            const stillHas = Boolean(route.query.code || route.query.state)
-            if (!stillHas) {
-              stop()
-              void navigateHomeOnce()
-            }
-          }
-        )
-      } else {
-        void navigateHomeOnce()
-      }
+      void navigateHomeOnce()
     }
   }
 )
 
-onMounted(() => {
-  if (!isLoading.value && isAuthenticated.value) {
+onMounted(async () => {
+  // Check for OAuth callback
+  const hasRedirectParams = Boolean(route.query.code || route.query.state)
+  if (hasRedirectParams) {
+    await handleOAuthCallback()
+  } else if (!isLoading.value && isAuthenticated.value) {
     void navigateHomeOnce()
   }
 })

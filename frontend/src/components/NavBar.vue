@@ -3,9 +3,9 @@ import { computed, ref, watch } from 'vue';
 import IconMenu from './icons/IconMenu.vue';
 import BrandedButton from './basics/BrandedButton.vue';
 import { useRouter } from 'vue-router';
-import { useAuth0 } from '@auth0/auth0-vue';
+import { useAuth } from '@/plugins/AuthService';
 
-const { logout } = useAuth0();
+const { logout } = useAuth();
 
 const navOpen = ref(false)
 
@@ -25,11 +25,9 @@ const showNavLinks = computed(() => {
   return router.currentRoute.value.name !== "login"
 })
 
-function doLogout() {
-
+async function doLogout() {
   navOpen.value = false
-  logout({ logoutParams: { returnTo: window.location.origin}})
-  router.push({ name: "login" })
+  await logout()
 }
 
 

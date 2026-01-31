@@ -9,7 +9,9 @@ import path, { dirname } from "path"
 import { fileURLToPath } from "url"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-dotenv.config({ path: [path.resolve(__dirname, ".env.local"), path.resolve(__dirname, ".env")] })
+
+// Load test environment for E2E tests
+dotenv.config({ path: [path.resolve(__dirname, ".env.test"), path.resolve(__dirname, ".env")] })
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -37,12 +39,13 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    { name: "setup", testMatch: /.*\.setup\.ts/ },
+    // Isolated tests with unique users per test
+    // Each test gets its own user via the mock OIDC server
     {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"],
-        storageState: "playwright/.auth/user.json",
-       },
+      name: "isolated",
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: /.*\.setup\.ts/,
+      use: { ...devices["Desktop Firefox"] },
     },
 
     /* Test against mobile viewports. */
@@ -66,11 +69,24 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  // TODO: run this against the built version
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173/",
-    reuseExistingServer: !process.env.CI,
-  },
+  /* Run servers before starting the tests */
+  webServer: [
+    {
+      command: "npm run mock-oidc",
+      url: "http://localhost:9000/health",
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command:
+        "cd ../backend && rm -f test-e2e.sqlite && JWKS_URL=http://localhost:9000/.well-known/jwks.json REQUIRED_AUDIENCE=https://haasteikko.eu/api MIGRATIONS_PATH=migrations DATABASE_PATH=test-e2e.sqlite cargo run",
+      url: "http://localhost:3000/api/ping",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: "npm run dev -- --mode test",
+      url: "http://localhost:5173/",
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 })

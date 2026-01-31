@@ -1,7 +1,7 @@
 import type { HttpProxy } from "@/api/HttpProxy"
-import { useAuth0 } from "@auth0/auth0-vue"
 import { inject, type Plugin } from "vue"
 import type { ZodTypeAny, TypeOf, z } from "zod"
+import { useAuth } from "./AuthService"
 
 export type ApiConfig = {
   apiUrl: string
@@ -18,7 +18,7 @@ export function createApi(config: ApiConfig): Plugin {
 }
 
 export function useHttpApi(): HttpProxy {
-  const { getAccessTokenSilently } = useAuth0()
+  const { getAccessTokenSilently } = useAuth()
   const apiConfig: ApiConfig | undefined = inject(API_CONFIG_INJECTION_KEY)
   if (!apiConfig) {
     throw new Error("ApiConfig not provided")

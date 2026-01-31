@@ -41,7 +41,7 @@ async fn main() {
     let app_state = AppState {
         jwks,
         required_audience,
-        database_path: database_path,
+        database_path,
     };
 
     let cors = CorsLayer::new()
@@ -60,7 +60,6 @@ async fn main() {
         .nest("/api", challenge_answers::routes())
         .nest("/api", preferences::routes())
         .with_state(app_state)
-        // For local development, disallow when deploying
         .layer(cors);
 
     let address = "0.0.0.0:3000";
