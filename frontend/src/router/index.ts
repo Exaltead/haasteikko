@@ -6,7 +6,7 @@ import ChallengeManagementView from "@/views/ChallengeManagementView.vue"
 import ChallengeSolutionView from "@/views/ChallengeSolutionView.vue"
 import OverallChallengesView from "@/views/OverallChallengesView.vue"
 import HomeView from "@/views/HomeView.vue"
-import { authGuard } from "@auth0/auth0-vue"
+import { authGuard } from "@/plugins/AuthService"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

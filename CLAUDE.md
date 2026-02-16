@@ -19,7 +19,7 @@ npm run type-check    # TypeScript validation
 npm run lint          # ESLint with auto-fix
 npm run format        # Prettier formatting
 npm run storybook     # Component development (port 6006)
-npx playwright test   # E2E tests (requires dev server or uses webServer config)
+PLAYWRIGHT_HTML_OPEN=never npx playwright test   # E2E tests (suppress report popup)
 ```
 
 ### Backend (from `backend/` directory)
