@@ -42,7 +42,7 @@ export default defineConfig({
     // Isolated tests with unique users per test
     // Each test gets its own user via the mock OIDC server
     {
-      name: "isolated",
+      name: "Desktop Firefox",
       testMatch: /.*\.spec\.ts/,
       testIgnore: /.*\.setup\.ts/,
       use: { ...devices["Desktop Firefox"] },
