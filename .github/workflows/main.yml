@@ -62,8 +62,12 @@ jobs:
       - name: Build rust backend
         working-directory: packages/backend
         run: |
-          rustup target add x86_64-unknown-linux-gnu || true
+          rustup target add x86_64-unknown-linux-gnu
+          # Clean target directory to avoid cache issues
+          cargo clean
           cargo build --release --target x86_64-unknown-linux-gnu
+          # Verify the binary was built
+          ls -la target/x86_64-unknown-linux-gnu/release/
 
       - name: Prepare deployment artifacts
         run: |
@@ -72,7 +76,13 @@ jobs:
           cp -r packages/frontend/dist/* deployment_artifacts/dist/
           mkdir -p deployment_artifacts/backend
           # copy the built binary
-          cp packages/backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/ || true
+          if [ -f "packages/backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend" ]; then
+            cp packages/backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/
+          else
+            echo "ERROR: Backend binary not found!"
+            ls -la packages/backend/target/x86_64-unknown-linux-gnu/release/ || true
+            exit 1
+          fi
           # copy migrations
           cp -r packages/backend/migrations deployment_artifacts/backend/
 
@@ -82,6 +92,16 @@ jobs:
           echo "${{ secrets.VM_SSH_SECRET }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts || true
+
+      - name: Verify deployment artifacts
+        run: |
+          echo "Checking deployment artifacts..."
+          ls -la deployment_artifacts/
+          ls -la deployment_artifacts/backend/
+          if [ ! -f "deployment_artifacts/backend/haasteikko-backend" ]; then
+            echo "ERROR: Backend binary missing from deployment artifacts!"
+            exit 1
+          fi
 
       - name: Deploy
         run: |
