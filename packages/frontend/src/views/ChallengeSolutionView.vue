@@ -11,7 +11,8 @@ import IconDoubleCheck from '@/components/icons/IconDoubleCheck.vue';
 import IconWarning from '@/components/icons/IconWarning.vue';
 import LibraryItemCard from '@/components/EntryListing/LibraryItemCard.vue';
 import TabNavigation from '@/components/basics/TabNavigation.vue'
-import ResponsiveCardWrapper from '@/components/basics/ResponsiveCardWrapper.vue';
+import ResponsiveCardWrapper from '@/components/basics/ResponsiveCardWrapper.vue'
+import CustomIcon from '@/components/basics/CustomIcon.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
 import { computed, ref, watch } from 'vue';
@@ -28,6 +29,7 @@ const allItems = ref<LibraryItem[]>([])
 const questions = ref<Question[]>([])
 const allAnswers = ref<Answer[]>([])
 const challengeName = ref("")
+const challengeMediaType = ref<"Book" | "Game">("Book")
 
 const solution = ref<Solution[]>([])
 async function getSolution(): Promise<Solution[]> {
@@ -80,6 +82,7 @@ async function loadData() {
     challenge.questions.sort((a, b) => a.number - b.number)
     questions.value = challenge.questions
     challengeName.value = challenge.name
+    challengeMediaType.value = challenge.targetMedia
   }
 
   // Loads answers
@@ -276,11 +279,16 @@ const challengeLibraryItems = computed(() => {
           <div
             class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky ">
             <BrandedButton @click="$router.back()" icon="Back" variant="primary" class="ml-2 md:ml-0" />
-            <h1 class="text-lg md:text-xl font-bold truncate max-w-[60%]">{{ challengeName }}</h1>
+            <div class="flex items-center gap-2">
+              <CustomIcon :name="challengeMediaType" class="w-6 h-6 md:w-8 md:h-8 text-brand-orange/70" />
+              <h1 class="text-lg md:text-xl font-bold whitespace-normal">{{ challengeName }}</h1>
+            </div>
             <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->
           </div>
 
-          <TabNavigation tab1Label="Ratkaisu" tab2Label="Kirjastoni">
+          <TabNavigation 
+            tab1Label="Ratkaisu" 
+            :tab2Label="`Kirjastoni (${challengeLibraryItems.length})`">
             <template #tab1>
               <div class="overflow-hidden w-full max-w-4xl mx-auto p-2 md:p-0">
                 <ul class="flex flex-col w-full">
