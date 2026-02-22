@@ -6,17 +6,16 @@
     "packages/*"
   ],
   "scripts": {
-    "install": "npm install",
     "build": "npm run build --workspace=frontend && cargo build --release",
-    "dev": "cd packages/frontend && npm run dev",
+    "dev": "npm run dev --workspace=frontend",
     "start:backend": "cd packages/backend && cargo run",
-    "start:frontend": "cd packages/frontend && npm run dev",
+    "start:frontend": "npm run dev --workspace=frontend",
     "start:all": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "test": "npm test --workspace=frontend",
-    "test:e2e": "cd packages/frontend && npm run test:e2e",
+    "test:e2e": "npm run test:e2e --workspace=frontend",
     "lint": "npm run lint --workspace=frontend",
     "format": "npm run format --workspace=frontend",
-    "clean": "rm -rf packages/backend/target packages/frontend/dist packages/frontend/node_modules/.vite",
+    "clean": "rm -rf packages/backend/target packages/frontend/dist",
     "setup": "npm install && cargo fetch"
   },
   "devDependencies": {

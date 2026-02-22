@@ -24,14 +24,16 @@ jobs:
         with:
           node-version: "22.x"
 
+      - name: Install dependencies
+        run: |
+          npm ci
+
       - name: Build frontend
         env:
           VITE_API_URL: ${{ env.API_URL }}
           VITE_CLIENT_ID: ${{ secrets.CLIENT_ID }}
         run: |
-          cd packages/frontend
-          npm ci
-          npm run build
+          npm run build --workspace=frontend
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
