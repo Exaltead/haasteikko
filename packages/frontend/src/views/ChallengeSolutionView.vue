@@ -5,12 +5,12 @@ import { useLibraryApi } from '@/api/libraryApiClient';
 
 import { useSolutionsApi } from '@/api/solutionsApiClient';
 import BrandedButton from '@/components/basics/BrandedButton.vue';
-import BrandedSelect from '@/components/basics/BrandedSelect.vue';
 import LibraryItemCard from '@/components/EntryListing/LibraryItemCard.vue';
 import TabNavigation from '@/components/basics/TabNavigation.vue'
 import ResponsiveCardWrapper from '@/components/basics/ResponsiveCardWrapper.vue'
 import CustomIcon from '@/components/basics/CustomIcon.vue';
-import StatusIcon from '@/components/Challenge/StatusIcon.vue';
+import EmptyState from '@/components/basics/EmptyState.vue';
+import QuestionSolutionItem from '@/components/Challenge/QuestionSolutionItem.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
 import { computed, ref, watch } from 'vue';
@@ -267,6 +267,38 @@ function getSolutionForQuestion(questionId: string) {
   return solution.value.find(t => t.questionId === questionId)
 }
 
+function getSolutionValueForDisplay(questionId: string): string | string[] {
+  const solutionItem = getSolutionForQuestion(questionId)
+  if (!solutionItem) return []
+
+  return solutionItem.kind === "SinglePartSolution"
+    ? solutionItem.singleAnswerItemId || ""
+    : solutionItem.multipleAnswerItemIds
+}
+
+function updateSolutionForQuestion(questionId: string, newValue: string | string[]) {
+  const solutionIndex = solution.value.findIndex(t => t.questionId === questionId)
+  if (solutionIndex !== -1) {
+    const currentSolution = solution.value[solutionIndex]
+
+    if (currentSolution?.kind === "SinglePartSolution") {
+      solution.value[solutionIndex] = {
+        kind: "SinglePartSolution",
+        questionId: questionId,
+        singleAnswerItemId: newValue as string,
+        multipleAnswerItemIds: currentSolution.multipleAnswerItemIds
+      }
+    } else {
+      solution.value[solutionIndex] = {
+        kind: "MultiPartSolution",
+        questionId: questionId,
+        singleAnswerItemId: currentSolution?.singleAnswerItemId,
+        multipleAnswerItemIds: newValue as string[]
+      }
+    }
+  }
+}
+
 </script>
 
 
@@ -288,63 +320,31 @@ function getSolutionForQuestion(questionId: string) {
             <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->
           </div>
 
-          <TabNavigation 
-            tab1Label="Ratkaisu" 
+          <TabNavigation
+            tab1Label="Ratkaisu"
             :tab2Label="`Kirjastoni (${challengeLibraryItems.length})`">
             <template #tab1>
               <div class="overflow-hidden w-full max-w-[84rem] mx-auto px-2 md:px-0 py-4">
                 <ul class="flex flex-col w-full">
-                    <li v-for="{ question, options, status }, i in questionToAnswersMap" :key="question.id"
-                      class="w-full p-4" :class="i % 2 === 0 ? 'bg-white' : 'bg-light-gray'">
-                      <div v-if="question.kind === 'Boolean'" class="flex flex-col gap-2 w-full">
-                        <h2>{{ question.question }}</h2>
-                        <div class="flex justify-between items-center gap-2">
-                          <StatusIcon :status="status" />
-                          <div class="flex items-center gap-2">
-                            <span v-if="savingQuestionId === question.id"
-                              class="loading-spinner"></span>
-                            <BrandedSelect v-if="options.length > 0" :options="options"
-                              v-model="getSolutionForQuestion(question.id)!.singleAnswerItemId"
-                              :disabled="savingQuestionId === question.id" />
-                            <span v-else class="text-text-primary">Ei vastauksia</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div v-else-if="question.kind === 'TextInput'" class="flex flex-col gap-2 w-full">
-                        <h2>{{ question.question }}</h2>
-                        <div v-if="options.length > 0" class="flex justify-between items-start gap-2">
-                          <div class="mt-1">
-                            <StatusIcon :status="status" />
-                          </div>
-                          <div class="flex flex-col gap-2 items-end">
-                            <div
-                              v-for="_, index in getSolutionForQuestion(question.id)!.multipleAnswerItemIds"
-                              :key="index">
-                              <div v-if="index === 0 || solution[i]!.multipleAnswerItemIds[0] !== ''"
-                                class="flex items-center gap-2">
-                                <span v-if="savingQuestionId === question.id"
-                                  class="loading-spinner"></span>
-                                <BrandedSelect v-if="options.length > 0" :options="options"
-                                  v-model="solution[i]!.multipleAnswerItemIds[index]" :title="`Osa ${index + 1}`"
-                                  :disabled="savingQuestionId === question.id" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div v-else class="flex justify-between items-center gap-2">
-                          <div class="w-5 h-5 flex-shrink-0"></div>
-                          <span class="text-text-primary">Ei vastauksia</span>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
+                  <QuestionSolutionItem
+                    v-for="{ question, options, status }, i in questionToAnswersMap"
+                    :key="question.id"
+                    :question="question"
+                    :options="options"
+                    :status="status"
+                    :model-value="getSolutionValueForDisplay(question.id)"
+                    :saving="savingQuestionId === question.id"
+                    :question-index="i"
+                    @update:model-value="updateSolutionForQuestion(question.id, $event)"
+                  />
+                </ul>
                 </div>
               </template>
-              
+
               <template #tab2>
                 <div class="flex flex-col items-center w-full">
-                  <div v-if="challengeLibraryItems.length === 0" class="p-4 text-center max-w-[84rem] mx-auto">
-                    <p>Ei kirjastotietueita tähän haasteeseen</p>
+                  <div v-if="challengeLibraryItems.length === 0" class="max-w-[84rem] mx-auto">
+                    <EmptyState message="Ei kirjastotietueita tähän haasteeseen" />
                   </div>
                   <div v-else
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-[84rem] mx-auto px-2 md:px-0">
