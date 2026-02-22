@@ -153,7 +153,7 @@ function getQuestionAnswers(question: Question): Answer[] {
     const options = allAnswers.value.filter((answer) => answer.questionId === question.id
       && answer.kind === "TextInput" && answer.answer !== "")
 
-    const questionSolution = solution.value.find(t => t.questionId === question.id)
+    const questionSolution = getSolutionForQuestion(question.id)
     if (questionSolution === undefined) {
       return []
     }
@@ -194,7 +194,7 @@ function getQuestionStatus(question: Question, options: { name: string, value: s
     return null
   }
 
-  const questionSolution = solution.value.find(t => t.questionId === question.id)
+  const questionSolution = getSolutionForQuestion(question.id)
   if (!questionSolution) {
     return 'warning'
   }
@@ -263,6 +263,10 @@ const challengeLibraryItems = computed(() => {
   )
 })
 
+function getSolutionForQuestion(questionId: string) {
+  return solution.value.find(t => t.questionId === questionId)
+}
+
 </script>
 
 
@@ -275,7 +279,7 @@ const challengeLibraryItems = computed(() => {
       <ResponsiveCardWrapper>
         <div class="flex flex-col w-full">
           <div
-            class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky ">
+            class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky top-0 z-10">
             <BrandedButton @click="$router.back()" icon="Back" variant="primary" class="ml-2 md:ml-0" />
             <div class="flex items-center gap-2">
               <CustomIcon :name="challengeMediaType" class="w-6 h-6 md:w-8 md:h-8 text-brand-orange/70" />
@@ -288,7 +292,7 @@ const challengeLibraryItems = computed(() => {
             tab1Label="Ratkaisu" 
             :tab2Label="`Kirjastoni (${challengeLibraryItems.length})`">
             <template #tab1>
-              <div class="overflow-hidden w-full max-w-4xl mx-auto p-2 md:p-0">
+              <div class="overflow-hidden w-full max-w-[84rem] mx-auto px-2 md:px-0 py-4">
                 <ul class="flex flex-col w-full">
                     <li v-for="{ question, options, status }, i in questionToAnswersMap" :key="question.id"
                       class="w-full p-4" :class="i % 2 === 0 ? 'bg-white' : 'bg-light-gray'">
@@ -298,9 +302,9 @@ const challengeLibraryItems = computed(() => {
                           <StatusIcon :status="status" />
                           <div class="flex items-center gap-2">
                             <span v-if="savingQuestionId === question.id"
-                              class="animate-spin inline-block w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full"></span>
+                              class="loading-spinner"></span>
                             <BrandedSelect v-if="options.length > 0" :options="options"
-                              v-model="solution.find(t => t.questionId === question.id)!.singleAnswerItemId"
+                              v-model="getSolutionForQuestion(question.id)!.singleAnswerItemId"
                               :disabled="savingQuestionId === question.id" />
                             <span v-else class="text-text-primary">Ei vastauksia</span>
                           </div>
@@ -314,12 +318,12 @@ const challengeLibraryItems = computed(() => {
                           </div>
                           <div class="flex flex-col gap-2 items-end">
                             <div
-                              v-for="_, index in solution.find(t => t.questionId === question.id)!.multipleAnswerItemIds"
+                              v-for="_, index in getSolutionForQuestion(question.id)!.multipleAnswerItemIds"
                               :key="index">
                               <div v-if="index === 0 || solution[i]!.multipleAnswerItemIds[0] !== ''"
                                 class="flex items-center gap-2">
                                 <span v-if="savingQuestionId === question.id"
-                                  class="animate-spin inline-block w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full"></span>
+                                  class="loading-spinner"></span>
                                 <BrandedSelect v-if="options.length > 0" :options="options"
                                   v-model="solution[i]!.multipleAnswerItemIds[index]" :title="`Osa ${index + 1}`"
                                   :disabled="savingQuestionId === question.id" />
@@ -339,11 +343,11 @@ const challengeLibraryItems = computed(() => {
               
               <template #tab2>
                 <div class="flex flex-col items-center w-full">
-                  <div v-if="challengeLibraryItems.length === 0" class="p-4 text-center max-w-4xl mx-auto">
+                  <div v-if="challengeLibraryItems.length === 0" class="p-4 text-center max-w-[84rem] mx-auto">
                     <p>Ei kirjastotietueita tähän haasteeseen</p>
                   </div>
                   <div v-else
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-4xl mx-auto px-2 md:px-0">
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-[84rem] mx-auto px-2 md:px-0">
                     <LibraryItemCard v-for="(item, index) in challengeLibraryItems" :key="item.id" :item="item"
                       :orderingNumber="index + 1" @itemUpdated="loadData" />
                   </div>

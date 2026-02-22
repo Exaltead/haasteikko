@@ -19,4 +19,8 @@
     .card {
         @apply bg-white shadow-lg rounded
     }
+    
+    .loading-spinner {
+        @apply animate-spin inline-block w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full
+    }
 }
