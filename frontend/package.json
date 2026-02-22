@@ -14,14 +14,14 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "mock-oidc": "npx tsx e2e/mock-oidc/server.ts",
-    "test:e2e": "playwright test --project=isolated"
+    "test:e2e": "playwright test --project='Desktop Firefox"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
     "jwt-decode": "^4.0.0",
     "oidc-client-ts": "^3.1.0",
     "uuid": "13.0.0",
-    "vue": "3.5.27",
+    "vue": "3.5.28",
     "vue-router": "^4.5.1",
     "zod": "^4.3.6"
   },
@@ -55,6 +55,6 @@
     "eslint-plugin-storybook": "^10.2.0",
     "vitest": "^4.0.16",
     "playwright": "^1.57.0",
-    "@vitest/browser-playwright": "^4.0.16"
+    "@vitest/browser-playwright": "^4.0.18"
   }
 }
