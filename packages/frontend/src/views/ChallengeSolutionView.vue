@@ -6,13 +6,11 @@ import { useLibraryApi } from '@/api/libraryApiClient';
 import { useSolutionsApi } from '@/api/solutionsApiClient';
 import BrandedButton from '@/components/basics/BrandedButton.vue';
 import BrandedSelect from '@/components/basics/BrandedSelect.vue';
-import IconCheck from '@/components/icons/IconCheck.vue';
-import IconDoubleCheck from '@/components/icons/IconDoubleCheck.vue';
-import IconWarning from '@/components/icons/IconWarning.vue';
 import LibraryItemCard from '@/components/EntryListing/LibraryItemCard.vue';
 import TabNavigation from '@/components/basics/TabNavigation.vue'
 import ResponsiveCardWrapper from '@/components/basics/ResponsiveCardWrapper.vue'
 import CustomIcon from '@/components/basics/CustomIcon.vue';
+import StatusIcon from '@/components/Challenge/StatusIcon.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
 import { computed, ref, watch } from 'vue';
@@ -297,11 +295,7 @@ const challengeLibraryItems = computed(() => {
                       <div v-if="question.kind === 'Boolean'" class="flex flex-col gap-2 w-full">
                         <h2>{{ question.question }}</h2>
                         <div class="flex justify-between items-center gap-2">
-                          <div class="w-5 h-5 flex-shrink-0">
-                            <IconWarning v-if="status === 'warning'" class="w-5 h-5 text-yellow-500" />
-                            <IconCheck v-else-if="status === 'selected'" class="w-5 h-5 text-green-500" />
-                            <IconDoubleCheck v-else-if="status === 'unique'" class="w-5 h-5 text-green-500" />
-                          </div>
+                          <StatusIcon :status="status" />
                           <div class="flex items-center gap-2">
                             <span v-if="savingQuestionId === question.id"
                               class="animate-spin inline-block w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full"></span>
@@ -315,10 +309,8 @@ const challengeLibraryItems = computed(() => {
                       <div v-else-if="question.kind === 'TextInput'" class="flex flex-col gap-2 w-full">
                         <h2>{{ question.question }}</h2>
                         <div v-if="options.length > 0" class="flex justify-between items-start gap-2">
-                          <div class="w-5 h-5 flex-shrink-0 mt-1">
-                            <IconWarning v-if="status === 'warning'" class="w-5 h-5 text-yellow-500" />
-                            <IconCheck v-else-if="status === 'selected'" class="w-5 h-5 text-green-500" />
-                            <IconDoubleCheck v-else-if="status === 'unique'" class="w-5 h-5 text-green-500" />
+                          <div class="mt-1">
+                            <StatusIcon :status="status" />
                           </div>
                           <div class="flex flex-col gap-2 items-end">
                             <div
