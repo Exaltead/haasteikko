@@ -16,10 +16,9 @@ function makeTabStyle(selected: boolean) {
 <template>
   <TabGroup as="div" class="w-full">
     <TabList as="div"
-      class="p-2 bg-brand-warm-white border-b border-brand-orange/20 min-h-[50px] md:min-h-[72px]">
-      <div class="flex flex-row items-center justify-between gap-4 md:gap-8">
+      class="bg-brand-warm-white border-b border-brand-orange/20 h-[50px] md:h-[72px] flex flex-row items-center justify-between gap-4 md:gap-8">
         <!-- First Tab -->
-        <div class="flex flex-1 justify-center items-center">
+        <div class="flex flex-1 justify-center items-center h-full">
           <Tab v-slot="{ selected }">
             <button :class="makeTabStyle(selected)"
               class="px-3 py-1 md:px-6 md:py-3 rounded text-sm md:text-base whitespace-nowrap">
@@ -29,10 +28,10 @@ function makeTabStyle(selected: boolean) {
         </div>
 
         <!-- Vertical Divider -->
-        <div class="h-6 md:h-8 w-px bg-brand-orange/50"></div>
+        <div class="h-full w-px bg-brand-orange/50"></div>
 
         <!-- Second Tab -->
-        <div class="flex flex-1 justify-center items-center">
+        <div class="flex flex-1 justify-center items-center h-full">
           <Tab v-slot="{ selected }">
             <button :class="makeTabStyle(selected)"
               class="px-3 py-1 md:px-6 md:py-3 rounded text-sm md:text-base whitespace-nowrap">
@@ -40,10 +39,9 @@ function makeTabStyle(selected: boolean) {
             </button>
           </Tab>
         </div>
-      </div>
     </TabList>
 
-    <TabPanels class="bg-white mt-4">
+    <TabPanels class="bg-white">
       <TabPanel>
         <slot name="tab1"></slot>
       </TabPanel>
