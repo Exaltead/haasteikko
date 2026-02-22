@@ -60,14 +60,21 @@ jobs:
             ${{ runner.os }}-cargo-target-
 
       - name: Build rust backend
-        working-directory: packages/backend
         run: |
+          cd packages/backend
           rustup target add x86_64-unknown-linux-gnu
           # Clean target directory to avoid cache issues
           cargo clean
           cargo build --release --target x86_64-unknown-linux-gnu
           # Verify the binary was built
-          ls -la target/x86_64-unknown-linux-gnu/release/
+          echo "Checking for binary..."
+          if [ -f "target/x86_64-unknown-linux-gnu/release/haasteikko-backend" ]; then
+            ls -la target/x86_64-unknown-linux-gnu/release/
+          else
+            echo "ERROR: Binary not found in expected location!"
+            find . -name "haasteikko-backend" -type f 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Prepare deployment artifacts
         run: |
@@ -76,11 +83,12 @@ jobs:
           cp -r packages/frontend/dist/* deployment_artifacts/dist/
           mkdir -p deployment_artifacts/backend
           # copy the built binary
-          if [ -f "packages/backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend" ]; then
-            cp packages/backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/
+          if [ -f "target/x86_64-unknown-linux-gnu/release/haasteikko-backend" ]; then
+            cp target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/
           else
             echo "ERROR: Backend binary not found!"
-            ls -la packages/backend/target/x86_64-unknown-linux-gnu/release/ || true
+            ls -la target/x86_64-unknown-linux-gnu/release/ || true
+            find . -name "haasteikko-backend" -type f 2>/dev/null || true
             exit 1
           fi
           # copy migrations
