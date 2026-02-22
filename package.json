@@ -1,0 +1,25 @@
+{
+  "name": "haasteikko",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "install": "npm install",
+    "build": "npm run build --workspace=frontend && cargo build --release",
+    "dev": "cd packages/frontend && npm run dev",
+    "start:backend": "cd packages/backend && cargo run",
+    "start:frontend": "cd packages/frontend && npm run dev",
+    "start:all": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "test": "npm test --workspace=frontend",
+    "test:e2e": "cd packages/frontend && npm run test:e2e",
+    "lint": "npm run lint --workspace=frontend",
+    "format": "npm run format --workspace=frontend",
+    "clean": "rm -rf packages/backend/target packages/frontend/dist packages/frontend/node_modules/.vite",
+    "setup": "npm install && cargo fetch"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

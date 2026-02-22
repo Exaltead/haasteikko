@@ -1,0 +1,2 @@
+# Backend-specific ignores (root .gitignore handles most cases)
+# This file can be kept minimal or removed in favor of root .gitignore

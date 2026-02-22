@@ -5,13 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Haasteikko is a full-stack application for tracking reading, gaming, and watching challenges. It's a monorepo with:
-- **frontend/**: Vue 3 + TypeScript SPA
-- **backend/**: Rust API server using Axum
+- **packages/frontend/**: Vue 3 + TypeScript SPA
+- **packages/backend/**: Rust API server using Axum
 - **scripts/**: Python migration utilities
 
 ## Common Commands
 
-### Frontend (from `frontend/` directory)
+### Frontend (from `packages/frontend/` directory)
 ```bash
 npm run dev           # Start dev server (localhost:5173)
 npm run build         # Production build (runs type-check + vite build)
@@ -22,7 +22,7 @@ npm run storybook     # Component development (port 6006)
 PLAYWRIGHT_HTML_OPEN=never npx playwright test   # E2E tests (suppress report popup)
 ```
 
-### Backend (from `backend/` directory)
+### Backend (from `packages/backend/` directory)
 ```bash
 cargo build --release                                    # Local build
 cargo build --release --target x86_64-unknown-linux-gnu  # Production build
@@ -54,7 +54,7 @@ Key files:
 - `migrations.rs` - SQL migration runner
 
 ### Database
-SQLite with migrations in `backend/migrations/`. Foreign keys enforced. User-scoped data access pattern.
+SQLite with migrations in `packages/backend/migrations/`. Foreign keys enforced. User-scoped data access pattern.
 
 ## Authentication
 

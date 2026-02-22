@@ -14,7 +14,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "mock-oidc": "npx tsx e2e/mock-oidc/server.ts",
-    "test:e2e": "playwright test --project='Desktop Firefox"
+    "test:e2e": "playwright test --project='Desktop Firefox'"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",

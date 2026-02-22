@@ -6,8 +6,73 @@ A hobby website project, created for family use + trying new tech. Designed to b
 
 The application follows a modern full-stack architecture:
 
-- **Frontend**: Vue 3 + TypeScript SPA with Tailwind CSS
+- **Frontend**: Vue 3 + TypeScript SPA with Tailwind CSS  
 - **Backend**: Rust API server using Axum framework
+
+## Monorepo Structure
+
+This project is organized as a monorepo with both frontend and backend in the `packages/` directory:
+
+```
+haasteikko/
+├── packages/
+│   ├── backend/     # Rust backend (Axum)
+│   └── frontend/    # Vue.js frontend  
+├── package.json     # Root npm workspace
+├── Cargo.toml       # Root Rust workspace
+└── README.md        # Project documentation
+```
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js (v18+)
+- npm (v9+)
+- Rust (stable toolchain)
+- Cargo
+
+### Installation
+
+```bash
+# Install dependencies for both frontend and backend
+npm run setup
+```
+
+### Running the Application
+
+```bash
+# Start both frontend and backend simultaneously
+npm run start:all
+
+# Or start individually
+npm run start:frontend  # Vue.js dev server
+npm run start:backend   # Rust API server
+```
+
+### Building
+
+```bash
+# Build both frontend and backend
+npm run build
+```
+
+## Package Management
+
+### Frontend (npm workspace)
+
+```bash
+# Add a dependency to frontend
+npm install --workspace=frontend package-name
+```
+
+### Backend (Cargo workspace)
+
+```bash
+# Run cargo commands from root
+cargo build
+cargo test
+```
 - **Database**: SQLite with structured migrations
 - **Authentication**: Auth0 for user management and JWT validation
 

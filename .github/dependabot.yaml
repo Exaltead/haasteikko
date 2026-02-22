@@ -1,14 +1,14 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/frontend"
+    directory: "/packages/frontend"
     schedule:
       interval: "monthly"
     cooldown:
       default-days: 7
 
   - package-ecosystem: "cargo"
-    directory: "/backend"
+    directory: "/packages/backend"
     schedule:
       interval: "monthly"
     cooldown:

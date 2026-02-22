@@ -1,0 +1,10 @@
+# Frontend-specific ignores (root .gitignore handles most cases)
+# This file can be kept minimal or removed in favor of root .gitignore
+
+# Cypress-specific (if used)
+/cypress/videos/
+/cypress/screenshots/
+
+# Playwright cache/auth
+/playwright/.cache/
+/playwright/.auth/

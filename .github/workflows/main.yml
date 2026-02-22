@@ -29,7 +29,7 @@ jobs:
           VITE_API_URL: ${{ env.API_URL }}
           VITE_CLIENT_ID: ${{ secrets.CLIENT_ID }}
         run: |
-          cd frontend
+          cd packages/frontend
           npm ci
           npm run build
 
@@ -45,20 +45,20 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/backend/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/packages/backend/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
 
       - name: Cache Rust target directory
         uses: actions/cache@v4
         with:
-          path: backend/target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/backend/Cargo.lock') }}
+          path: packages/backend/target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/packages/backend/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-target-
 
       - name: Build rust backend
-        working-directory: backend
+        working-directory: packages/backend
         run: |
           rustup target add x86_64-unknown-linux-gnu || true
           cargo build --release --target x86_64-unknown-linux-gnu
@@ -67,12 +67,12 @@ jobs:
         run: |
           rm -rf deployment_artifacts || true
           mkdir -p deployment_artifacts/dist
-          cp -r frontend/dist/* deployment_artifacts/dist/
+          cp -r packages/frontend/dist/* deployment_artifacts/dist/
           mkdir -p deployment_artifacts/backend
           # copy the built binary
-          cp backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/ || true
+          cp packages/backend/target/x86_64-unknown-linux-gnu/release/haasteikko-backend deployment_artifacts/backend/ || true
           # copy migrations
-          cp -r backend/migrations deployment_artifacts/backend/
+          cp -r packages/backend/migrations deployment_artifacts/backend/
 
       - name: Create SSH key
         run: |

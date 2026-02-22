@@ -7,8 +7,11 @@ This file provides guidance for AI agents (Claude, Mistral Vibe, etc.) working w
 ```
 haasteikko/
 ├── .github/              # GitHub configuration and workflows
-├── backend/              # Rust API server (Axum)
-├── frontend/             # Vue 3 + TypeScript SPA
+├── packages/
+│   ├── backend/         # Rust API server (Axum)
+│   └── frontend/         # Vue 3 + TypeScript SPA
+├── package.json          # Root npm workspace
+├── Cargo.toml            # Root Rust workspace
 ├── CLAUDE.md             # Claude-specific instructions
 ├── AGENTS.md             # This file - general AI agent guidance
 └── README.md             # Project overview
@@ -16,7 +19,7 @@ haasteikko/
 
 ## Key Directories
 
-### Backend (`backend/`)
+### Backend (`packages/backend/`)
 - **Language**: Rust
 - **Framework**: Axum
 - **Database**: SQLite
@@ -27,7 +30,7 @@ haasteikko/
   - `database.rs` - SQLite connection management
   - `migrations.rs` - Database migration runner
 
-### Frontend (`frontend/`)
+### Frontend (`packages/frontend/`)
 - **Language**: TypeScript
 - **Framework**: Vue 3
 - **Styling**: Tailwind CSS v4
@@ -46,24 +49,46 @@ haasteikko/
 - **Prompts**: AI agent instructions in `prompts/`
 - **Copilot**: High-level instructions in `copilot-instructions.md`
 
+## Monorepo Structure
+
+This project uses a monorepo structure with both frontend and backend packages managed from the root:
+
+```
+packages/
+├── backend/     # Rust API server (Axum)
+└── frontend/    # Vue 3 + TypeScript SPA
+```
+
+**Key files at root:**
+- `package.json` - npm workspace configuration
+- `Cargo.toml` - Rust workspace configuration
+- All scripts can be run from the root directory
+
 ## Development Workflow
 
 ### Common Commands
 
-**Frontend** (from `frontend/`):
+**Frontend** (from root):
 ```bash
-npm run dev           # Start dev server
-npm run build         # Production build
-npm run type-check    # TypeScript validation
-npm run lint          # ESLint with auto-fix
-npm run storybook     # Component development
+npm run start:frontend  # Start dev server
+npm run build           # Production build (both frontend + backend)
+npm run lint            # ESLint with auto-fix
+npm run storybook       # Component development
 ```
 
-**Backend** (from `backend/`):
+**Backend** (from root):
 ```bash
+npm run start:backend   # Start dev server
 cargo build --release                                    # Local build
 cargo build --release --target x86_64-unknown-linux-gnu  # Production build
 cargo test                                               # Run tests
+```
+
+**Monorepo commands** (from root):
+```bash
+npm run start:all        # Start both frontend and backend
+npm run test:e2e        # Run end-to-end tests
+npm run setup           # Install all dependencies
 ```
 
 
@@ -81,7 +106,7 @@ cargo test                                               # Run tests
 ## Database
 
 - **Type**: SQLite
-- **Migrations**: SQL files in `backend/migrations/`
+- **Migrations**: SQL files in `packages/backend/migrations/`
 - **Access pattern**: User-scoped data with foreign key constraints
 - **Connection**: Managed via `database.rs`
 
@@ -167,8 +192,9 @@ pub trait Repository<T> {
 
 ## Testing
 
-- **Frontend**: Playwright E2E tests in `frontend/e2e/`
+- **Frontend**: Playwright E2E tests in `packages/frontend/e2e/`
 - **Backend**: Rust unit tests (run with `cargo test`)
+- **E2E Tests**: Run from root with `npm run test:e2e`
 - **CI/CD**: Automated builds and deployments on push to main
 
 ## Troubleshooting

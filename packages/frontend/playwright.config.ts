@@ -78,7 +78,7 @@ export default defineConfig({
     },
     {
       command:
-        "cd ../backend && rm -f test-e2e.sqlite && JWKS_URL=http://localhost:9000/.well-known/jwks.json REQUIRED_AUDIENCE=https://haasteikko.eu/api MIGRATIONS_PATH=migrations DATABASE_PATH=test-e2e.sqlite cargo run",
+        "cd ../../packages/backend && rm -f test-e2e.sqlite && JWKS_URL=http://localhost:9000/.well-known/jwks.json REQUIRED_AUDIENCE=https://haasteikko.eu/api MIGRATIONS_PATH=migrations DATABASE_PATH=test-e2e.sqlite cargo run",
       url: "http://localhost:3000/api/ping",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

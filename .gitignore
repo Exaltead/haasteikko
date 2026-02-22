@@ -1,2 +1,64 @@
+# Root monorepo .gitignore
+
+# Rust/Cargo
+**/target/
+
+# Node.js/npm
+node_modules/
+
+# SQLite databases
+database.sqlite
+test-e2e.sqlite
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+coverage/
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files (except example ones)
+.env*.local
+.env*.production
+.env*.staging
+
+# Deployment scripts (usually generated)
+deploy.sh
+stg-deploy.sh
+prod-deploy.sh
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+
+# Storybook
+storybook-static/
+*storybook.log
+
+# Python
 venv/
+__pycache__/
+*.py[cod]
+
+# Misc
+.DS_Store
 plan.md
