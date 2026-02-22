@@ -68,11 +68,14 @@ jobs:
           cargo build --release --target x86_64-unknown-linux-gnu
           # Verify the binary was built
           echo "Checking for binary..."
-          if [ -f "target/x86_64-unknown-linux-gnu/release/haasteikko-backend" ]; then
-            ls -la target/x86_64-unknown-linux-gnu/release/
+          echo "Current directory: $(pwd)"
+          echo "Looking for binary in: ../../target/x86_64-unknown-linux-gnu/release/"
+          if [ -f "../../target/x86_64-unknown-linux-gnu/release/haasteikko-backend" ]; then
+            ls -la ../../target/x86_64-unknown-linux-gnu/release/
           else
             echo "ERROR: Binary not found in expected location!"
-            find . -name "haasteikko-backend" -type f 2>/dev/null || true
+            echo "Searching for binary..."
+            find ../../ -name "haasteikko-backend" -type f 2>/dev/null || true
             exit 1
           fi
 
