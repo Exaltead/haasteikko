@@ -54,7 +54,7 @@ jobs:
       - name: Cache Rust target directory
         uses: actions/cache@v4
         with:
-          path: packages/backend/target
+          path: target
           key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/packages/backend/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-target-
