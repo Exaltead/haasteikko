@@ -10,9 +10,9 @@ import IconCheck from '@/components/icons/IconCheck.vue';
 import IconDoubleCheck from '@/components/icons/IconDoubleCheck.vue';
 import IconWarning from '@/components/icons/IconWarning.vue';
 import LibraryItemCard from '@/components/EntryListing/LibraryItemCard.vue';
+import TabNavigation from '@/components/basics/TabNavigation.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
-import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue';
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -261,13 +261,6 @@ const challengeLibraryItems = computed(() => {
   )
 })
 
-// Tab styling function
-function makeTabStyle(selected: boolean) {
-  return selected
-    ? "bg-brand-primary text-white"
-    : "bg-warm-white text-text-primary hover:bg-brand-primary/10"
-}
-
 </script>
 
 
@@ -286,38 +279,10 @@ function makeTabStyle(selected: boolean) {
             <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->
           </div>
 
-          <TabGroup as="div">
-            <TabList as="div" class="p-2 bg-brand-warm-white border-b border-brand-orange/20">
-              <div class="flex flex-row items-center justify-between gap-4 md:gap-8">
-                <!-- First Tab -->
-                <div class="flex flex-1 justify-center items-center">
-                  <Tab v-slot="{ selected }">
-                    <button :class="makeTabStyle(selected)"
-                      class="px-3 py-1 md:px-6 md:py-3 rounded text-sm md:text-base whitespace-nowrap">
-                      <span>Ratkaisu</span>
-                    </button>
-                  </Tab>
-                </div>
-
-                <!-- Vertical Divider -->
-                <div class="h-6 md:h-8 w-px bg-brand-orange/50"></div>
-
-                <!-- Second Tab -->
-                <div class="flex flex-1 justify-center items-center">
-                  <Tab v-slot="{ selected }">
-                    <button :class="makeTabStyle(selected)"
-                      class="px-3 py-1 md:px-6 md:py-3 rounded text-sm md:text-base whitespace-nowrap">
-                      <span>Kirjastoni</span>
-                    </button>
-                  </Tab>
-                </div>
-              </div>
-            </TabList>
-
-            <TabPanels class="bg-white mt-4">
-              <TabPanel>
-                <div class="card overflow-hidden w-full max-w-4xl mx-auto p-2 md:p-0">
-                  <ul class="flex flex-col w-full">
+          <TabNavigation tab1Label="Ratkaisu" tab2Label="Kirjastoni">
+            <template #tab1>
+              <div class="card overflow-hidden w-full max-w-4xl mx-auto p-2 md:p-0">
+                <ul class="flex flex-col w-full">
                     <li v-for="{ question, options, status }, i in questionToAnswersMap" :key="question.id"
                       class="w-full p-4" :class="i % 2 === 0 ? 'bg-white' : 'bg-light-gray'">
                       <div v-if="question.kind === 'Boolean'" class="flex flex-col gap-2 w-full">
@@ -369,9 +334,9 @@ function makeTabStyle(selected: boolean) {
                     </li>
                   </ul>
                 </div>
-              </TabPanel>
-
-              <TabPanel>
+              </template>
+              
+              <template #tab2>
                 <div class="flex flex-col items-center w-full">
                   <div v-if="challengeLibraryItems.length === 0" class="card p-4 text-center max-w-4xl mx-auto">
                     <p>Ei kirjastotietueita tähän haasteeseen</p>
@@ -382,9 +347,8 @@ function makeTabStyle(selected: boolean) {
                       :orderingNumber="index + 1" @itemUpdated="loadData" />
                   </div>
                 </div>
-              </TabPanel>
-            </TabPanels>
-          </TabGroup>
+              </template>
+          </TabNavigation>
         </div>
       </div>
     </div>
