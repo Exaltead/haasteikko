@@ -10,7 +10,8 @@ import IconCheck from '@/components/icons/IconCheck.vue';
 import IconDoubleCheck from '@/components/icons/IconDoubleCheck.vue';
 import IconWarning from '@/components/icons/IconWarning.vue';
 import LibraryItemCard from '@/components/EntryListing/LibraryItemCard.vue';
-import TabNavigation from '@/components/basics/TabNavigation.vue';
+import TabNavigation from '@/components/basics/TabNavigation.vue'
+import ResponsiveCardWrapper from '@/components/basics/ResponsiveCardWrapper.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
 import { computed, ref, watch } from 'vue';
@@ -270,91 +271,7 @@ const challengeLibraryItems = computed(() => {
       <h1>Ladataan...</h1>
     </div>
     <div v-else class="flex flex-col items-center px-0 md:px-4">
-      <!-- Mobile view - no card -->
-      <div class="md:hidden w-full max-w-[1100px]">
-        <div class="flex flex-col w-full">
-          <div
-            class="flex items-center justify-between w-full p-2 border-b border-brand-orange bg-white sticky ">
-            <BrandedButton @click="$router.back()" icon="Back" variant="primary" class="ml-2" />
-            <h1 class="text-lg font-bold truncate max-w-[60%]">{{ challengeName }}</h1>
-            <div class="w-8"></div> <!-- Spacer for balance -->
-          </div>
-
-          <TabNavigation tab1Label="Ratkaisu" tab2Label="Kirjastoni">
-            <template #tab1>
-              <div class="w-full max-w-4xl mx-auto p-2">
-                <ul class="flex flex-col w-full">
-                    <li v-for="{ question, options, status }, i in questionToAnswersMap" :key="question.id"
-                      class="w-full p-4" :class="i % 2 === 0 ? 'bg-white' : 'bg-light-gray'">
-                      <div v-if="question.kind === 'Boolean'" class="flex flex-col gap-2 w-full">
-                        <h2>{{ question.question }}</h2>
-                        <div class="flex justify-between items-center gap-2">
-                          <div class="w-5 h-5 flex-shrink-0">
-                            <IconWarning v-if="status === 'warning'" class="w-5 h-5 text-yellow-500" />
-                            <IconCheck v-else-if="status === 'selected'" class="w-5 h-5 text-green-500" />
-                            <IconDoubleCheck v-else-if="status === 'unique'" class="w-5 h-5 text-green-500" />
-                          </div>
-                          <div class="flex items-center gap-2">
-                            <span v-if="savingQuestionId === question.id"
-                              class="animate-spin inline-block w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full"></span>
-                            <BrandedSelect v-if="options.length > 0" :options="options"
-                              v-model="solution.find(t => t.questionId === question.id)!.singleAnswerItemId"
-                              :disabled="savingQuestionId === question.id" />
-                            <span v-else class="text-text-primary">Ei vastauksia</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div v-else-if="question.kind === 'TextInput'" class="flex flex-col gap-2 w-full">
-                        <h2>{{ question.question }}</h2>
-                        <div v-if="options.length > 0" class="flex justify-between items-start gap-2">
-                          <div class="w-5 h-5 flex-shrink-0 mt-1">
-                            <IconWarning v-if="status === 'warning'" class="w-5 h-5 text-yellow-500" />
-                            <IconCheck v-else-if="status === 'selected'" class="w-5 h-5 text-green-500" />
-                            <IconDoubleCheck v-else-if="status === 'unique'" class="w-5 h-5 text-green-500" />
-                          </div>
-                          <div class="flex flex-col gap-2 items-end">
-                            <div
-                              v-for="_, index in solution.find(t => t.questionId === question.id)!.multipleAnswerItemIds"
-                              :key="index">
-                              <div v-if="index === 0 || solution[i]!.multipleAnswerItemIds[0] !== ''"
-                                class="flex items-center gap-2">
-                                <span v-if="savingQuestionId === question.id"
-                                  class="animate-spin inline-block w-4 h-4 border-2 border-brand-orange border-t-transparent rounded-full"></span>
-                                <BrandedSelect v-if="options.length > 0" :options="options"
-                                  v-model="solution[i]!.multipleAnswerItemIds[index]" :title="`Osa ${index + 1}`"
-                                  :disabled="savingQuestionId === question.id" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div v-else class="flex justify-between items-center gap-2">
-                          <div class="w-5 h-5 flex-shrink-0"></div>
-                          <span class="text-text-primary">Ei vastauksia</span>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </template>
-              
-              <template #tab2>
-                <div class="flex flex-col items-center w-full">
-                  <div v-if="challengeLibraryItems.length === 0" class="p-4 text-center max-w-4xl mx-auto">
-                    <p>Ei kirjastotietueita tähän haasteeseen</p>
-                  </div>
-                  <div v-else
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-4xl mx-auto px-2">
-                    <LibraryItemCard v-for="(item, index) in challengeLibraryItems" :key="item.id" :item="item"
-                      :orderingNumber="index + 1" @itemUpdated="loadData" />
-                  </div>
-                </div>
-              </template>
-          </TabNavigation>
-        </div>
-      </div>
-      
-      <!-- Desktop view - with card -->
-      <div class="hidden md:block card bg-brand-warm-white w-full max-w-[1100px] shadow-lg">
+      <ResponsiveCardWrapper>
         <div class="flex flex-col w-full">
           <div
             class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky ">
@@ -434,9 +351,8 @@ const challengeLibraryItems = computed(() => {
               </template>
           </TabNavigation>
         </div>
-      </div>
+      </ResponsiveCardWrapper>
     </div>
-
   </div>
 
 </template>
