@@ -46,7 +46,10 @@ const listItems = computed(() => {
 
   if (props.yearFilter !== "all") {
     filteredItems = filteredItems.filter(
-      (item) => new Date(item.addedAt).getFullYear() === props.yearFilter,
+      (item) => {
+        const date = item.completedAt ? new Date(item.completedAt) : new Date(item.addedAt)
+        return date.getFullYear() === props.yearFilter
+      },
     )
   }
 
@@ -55,8 +58,8 @@ const listItems = computed(() => {
   }
 
   const sortedItems = filteredItems.sort((a, b) => {
-    const dateA = new Date(a.addedAt).getTime()
-    const dateB = new Date(b.addedAt).getTime()
+    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
+    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
     return dateA - dateB
   })
 
@@ -74,8 +77,8 @@ const listItems = computed(() => {
   const combined = [...books, ...games]
 
   const resorted = combined.sort((a, b) => {
-    const dateA = new Date(a.addedAt).getTime()
-    const dateB = new Date(b.addedAt).getTime()
+    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
+    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
     return dateB - dateA
   })
 
