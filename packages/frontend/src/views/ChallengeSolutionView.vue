@@ -258,9 +258,25 @@ const questionToAnswersMap = computed(() => {
 // Filter library items for the current challenge
 const challengeLibraryItems = computed(() => {
   const challengeId = route.params.id as string
-  return allItems.value.filter(item =>
+  const filteredItems = allItems.value.filter(item =>
     item.activatedChallengeIds.includes(challengeId)
   )
+
+  // Apply same sorting as EntryListing.vue for stable ordering
+  return filteredItems.sort((a, b) => {
+    // Primary: completedAt descending (newest first)
+    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
+    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
+    if (dateA !== dateB) return dateB - dateA
+
+    // Secondary: addedAt descending (newer additions first)
+    const addedA = new Date(a.addedAt).getTime()
+    const addedB = new Date(b.addedAt).getTime()
+    if (addedA !== addedB) return addedB - addedA
+
+    // Tertiary: title ascending (alphabetical for complete consistency)
+    return a.title.localeCompare(b.title)
+  })
 })
 
 function getSolutionForQuestion(questionId: string) {
