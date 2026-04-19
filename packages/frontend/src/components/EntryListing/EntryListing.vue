@@ -77,9 +77,18 @@ const listItems = computed(() => {
   const combined = [...books, ...games]
 
   const resorted = combined.sort((a, b) => {
+    // Primary: completedAt descending (newest first)
     const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
     const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
-    return dateB - dateA
+    if (dateA !== dateB) return dateB - dateA
+
+    // Secondary: addedAt descending (newer additions first)
+    const addedA = new Date(a.addedAt).getTime()
+    const addedB = new Date(b.addedAt).getTime()
+    if (addedA !== addedB) return addedB - addedA
+
+    // Tertiary: title ascending (alphabetical for complete consistency)
+    return a.title.localeCompare(b.title)
   })
 
   return resorted
