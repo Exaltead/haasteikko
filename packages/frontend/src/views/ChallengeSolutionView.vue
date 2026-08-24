@@ -55,20 +55,20 @@ async function getSolution(): Promise<Solution[]> {
   return result
 }
 
+async function loadItems(): Promise<void> {
+  const items = await libraryApi.fetchLibraryItems()
+  allItems.value = items.filter((item) => {
+    const challengeId = route.params.id as string
+    return item.activatedChallengeIds.includes(challengeId)
+  })
+}
+
 const loading = ref(false)
 async function loadData() {
   loading.value = true
   const challengeId = route.params.id as string
   // Loads library items
-  const loadItems = async () => {
-    const items = await libraryApi.fetchLibraryItems()
-    // TODO: filter on server side
-    items.filter((item) => {
-      return item.activatedChallengeIds.includes(challengeId)
-    })
-
-    allItems.value = items
-  }
+  await loadItems()
 
   // Loads questions in the challenges
   const loadChallenges = async () => {
@@ -336,39 +336,30 @@ function updateSolutionForQuestion(questionId: string, newValue: string | string
             <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->
           </div>
 
-          <TabNavigation
-            tab1Label="Ratkaisu"
-            :tab2Label="`Kirjastoni (${challengeLibraryItems.length})`">
+          <TabNavigation tab1Label="Ratkaisu" :tab2Label="`Kirjastoni (${challengeLibraryItems.length})`">
             <template #tab1>
               <div class="overflow-hidden w-full max-w-[84rem] mx-auto px-2 md:px-0 py-4">
                 <ul class="flex flex-col w-full">
-                  <QuestionSolutionItem
-                    v-for="{ question, options, status }, i in questionToAnswersMap"
-                    :key="question.id"
-                    :question="question"
-                    :options="options"
-                    :status="status"
-                    :model-value="getSolutionValueForDisplay(question.id)"
-                    :saving="savingQuestionId === question.id"
-                    :question-index="i"
-                    @update:model-value="updateSolutionForQuestion(question.id, $event)"
-                  />
+                  <QuestionSolutionItem v-for="{ question, options, status }, i in questionToAnswersMap"
+                    :key="question.id" :question="question" :options="options" :status="status"
+                    :model-value="getSolutionValueForDisplay(question.id)" :saving="savingQuestionId === question.id"
+                    :question-index="i" @update:model-value="updateSolutionForQuestion(question.id, $event)" />
                 </ul>
-                </div>
-              </template>
+              </div>
+            </template>
 
-              <template #tab2>
-                <div class="flex flex-col items-center w-full">
-                  <div v-if="challengeLibraryItems.length === 0" class="max-w-[84rem] mx-auto">
-                    <EmptyState message="Ei kirjastotietueita tähän haasteeseen" />
-                  </div>
-                  <div v-else
-                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-[84rem] mx-auto px-2 md:px-0">
-                    <LibraryItemCard v-for="(item, index) in challengeLibraryItems" :key="item.id" :item="item"
-                      :orderingNumber="challengeLibraryItems.length - index" @itemUpdated="loadData" />
-                  </div>
+            <template #tab2>
+              <div class="flex flex-col items-center w-full">
+                <div v-if="challengeLibraryItems.length === 0" class="max-w-[84rem] mx-auto">
+                  <EmptyState message="Ei kirjastotietueita tähän haasteeseen" />
                 </div>
-              </template>
+                <div v-else
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-[84rem] mx-auto px-2 md:px-0">
+                  <LibraryItemCard v-for="(item, index) in challengeLibraryItems" :key="item.id" :item="item"
+                    :orderingNumber="challengeLibraryItems.length - index" @itemUpdated="loadItems" />
+                </div>
+              </div>
+            </template>
           </TabNavigation>
         </div>
       </ResponsiveCardWrapper>
