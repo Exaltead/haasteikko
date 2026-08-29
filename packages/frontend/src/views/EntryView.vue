@@ -3,7 +3,7 @@ import { useChallengeApi } from '@/api/challengeApiClient';
 import { useLibraryApi } from '@/api/libraryApiClient';;
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
 import EntryChallenge from '@/components/Entry/EntryChallenge.vue';
-import IconBack from '@/components/icons/IconBack.vue';
+import BaseIcon from '@/components/Icons/BaseIcon.vue';
 import type { Challenge } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
 import { TabGroup, TabList, TabPanel, TabPanels, Tab } from '@headlessui/vue';
@@ -76,7 +76,7 @@ const challengeKeys = computed(() => {
   <main>
     <div>
       <button :onClick="router.back" class="p-4" data-testid="back-button">
-        <IconBack class="text-brand-primary w-8 h-fit cursor-pointer" />
+        <BaseIcon name="Back" class="text-brand-primary w-8 h-fit cursor-pointer" />
       </button>
       <div class="px-4 md:px-10 flex flex-col gap-10" v-if="item">
         <EntryBasics @objectDeleted="toLibrary" :challenges="challenges" @object-edited="getItem" :item="item"

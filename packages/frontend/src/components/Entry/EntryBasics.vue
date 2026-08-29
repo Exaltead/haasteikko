@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import type { LibraryItem } from '@/models/LibraryItem';
 import { computed, ref } from 'vue';
-import Button from "@/components/basics/BrandedButton.vue"
-import TextInput from "@/components/basics/TextInput.vue"
+import Button from "@/components/Basics/BrandedButton.vue"
+import TextInput from "@/components/Basics/TextInput.vue"
 import { useLibraryApi } from '@/api/libraryApiClient';
 import type { Challenge } from '@/models/challenge';
-import ManagementList from '../basics/ManagementList.vue';
+import ManagementList from '../Basics/ManagementList.vue';
 
 const libraryApi = useLibraryApi()
 

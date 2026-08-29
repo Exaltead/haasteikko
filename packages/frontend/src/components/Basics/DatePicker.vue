@@ -1,9 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed } from "vue"
 import type { IconName } from "@/models/iconName"
-import CustomIcon from "./CustomIcon.vue"
-import IconChevronLeft from "@/components/icons/IconChevronLeft.vue"
-import IconChevronRight from "@/components/icons/IconChevronRight.vue"
+import BaseIcon from "@/components/Icons/BaseIcon.vue"
 
 defineProps<{
   label: string
@@ -89,7 +87,7 @@ function isToday(date: Date): boolean {
 <template>
   <div class="flex flex-col gap-1">
     <div class="flex flex-row items-center gap-2">
-      <CustomIcon v-if="icon" :name="icon" class="text-brand-primary" />
+      <BaseIcon v-if="icon" :name="icon" class="text-brand-primary" />
       <label>{{ label }}</label>
     </div>
 
@@ -101,7 +99,7 @@ function isToday(date: Date): boolean {
           @click="previousMonth"
           class="rounded p-0.5 hover:bg-brand-primary/10"
         >
-          <IconChevronLeft class="h-4 w-4" />
+          <BaseIcon name="ChevronLeft" class="h-4 w-4" />
         </button>
         <span class="text-sm font-medium capitalize">{{ currentMonthName }}</span>
         <button
@@ -109,7 +107,7 @@ function isToday(date: Date): boolean {
           @click="nextMonth"
           class="rounded p-0.5 hover:bg-brand-primary/10"
         >
-          <IconChevronRight class="h-4 w-4" />
+          <BaseIcon name="ChevronRight" class="h-4 w-4" />
         </button>
       </div>
 

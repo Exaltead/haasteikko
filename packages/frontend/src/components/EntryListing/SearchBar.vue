@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CustomIcon from "@/components/basics/CustomIcon.vue"
+import BaseIcon from "@/components/Icons/BaseIcon.vue"
 
 const searchQuery = defineModel<string>({ default: "" })
 </script>
@@ -8,7 +8,7 @@ const searchQuery = defineModel<string>({ default: "" })
   <div
     class="flex flex-row items-center flex-1 md:flex-initial md:min-w-64 border border-brand-black rounded-full bg-white px-3 py-1"
   >
-    <CustomIcon name="Search" class="w-5 h-5 text-brand-primary shrink-0" />
+    <BaseIcon name="Search" class="w-5 h-5 text-brand-primary shrink-0" />
     <input
       v-model="searchQuery"
       type="text"

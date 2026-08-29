@@ -4,12 +4,12 @@ import { useChallengeApi } from '@/api/challengeApiClient';
 import { useLibraryApi } from '@/api/libraryApiClient';
 
 import { useSolutionsApi } from '@/api/solutionsApiClient';
-import BrandedButton from '@/components/basics/BrandedButton.vue';
+import BrandedButton from '@/components/Basics/BrandedButton.vue';
 import LibraryItemCard from '@/components/EntryListing/LibraryItemCard.vue';
-import TabNavigation from '@/components/basics/TabNavigation.vue'
-import ResponsiveCardWrapper from '@/components/basics/ResponsiveCardWrapper.vue'
-import CustomIcon from '@/components/basics/CustomIcon.vue';
-import EmptyState from '@/components/basics/EmptyState.vue';
+import TabNavigation from '@/components/Basics/TabNavigation.vue'
+import ResponsiveCardWrapper from '@/components/Basics/ResponsiveCardWrapper.vue'
+import BaseIcon from '@/components/Icons/BaseIcon.vue';
+import EmptyState from '@/components/Basics/EmptyState.vue';
 import QuestionSolutionItem from '@/components/Challenge/QuestionSolutionItem.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
@@ -330,7 +330,7 @@ function updateSolutionForQuestion(questionId: string, newValue: string | string
             class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky top-0 z-10">
             <BrandedButton @click="$router.back()" icon="Back" variant="primary" class="ml-2 md:ml-0" />
             <div class="flex items-center gap-2">
-              <CustomIcon :name="challengeMediaType" class="w-6 h-6 md:w-8 md:h-8 text-brand-orange/70" />
+              <BaseIcon :name="challengeMediaType" class="w-6 h-6 md:w-8 md:h-8 text-brand-orange/70" />
               <h1 class="text-lg md:text-xl font-bold whitespace-normal">{{ challengeName }}</h1>
             </div>
             <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import BrandedSelect from '@/components/basics/BrandedSelect.vue'
+import BrandedSelect from '@/components/Basics/BrandedSelect.vue'
 import StatusIcon from './StatusIcon.vue'
-import EmptyState from '@/components/basics/EmptyState.vue'
+import EmptyState from '@/components/Basics/EmptyState.vue'
 import type { Question } from '@/models/challenge'
 
 type QuestionStatus = 'warning' | 'selected' | 'unique' | null

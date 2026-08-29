@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { useChallengeApi } from '@/api/challengeApiClient';
 import type { Challenge } from '@/models/challenge';
+import { filterByStatus } from '@/composables/useChallengeProgress';
 import { computed, ref } from 'vue';
 
 const challengeApiClient = useChallengeApi()
@@ -12,13 +13,9 @@ async function getChallenges() {
   challenges.value = await challengeApiClient.fetchChallenges()
 }
 
-const activeChallenges = computed(() => {
-  return challenges.value.filter(challenge => challenge.status === "active")
-})
+const activeChallenges = computed(() => filterByStatus(challenges.value, "active"))
 
-const pastChallenges = computed(() => {
-  return challenges.value.filter(challenge => challenge.status === "inactive")
-})
+const pastChallenges = computed(() => filterByStatus(challenges.value, "inactive"))
 
 getChallenges()
 

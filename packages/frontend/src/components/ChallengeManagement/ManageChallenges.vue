@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Challenge } from '@/models/challenge';
-import BrandedButton from '../basics/BrandedButton.vue';
+import BrandedButton from '../Basics/BrandedButton.vue';
 
 const { challenges } = defineProps<{ challenges: Challenge[] }>();
 const emit = defineEmits<{

@@ -1,19 +1,14 @@
 import { solutionSchema, type Solution } from "@/models/challenge"
 import { useHttpApi } from "@/plugins/HttpPlugin"
 import type { HttpProxy } from "./HttpProxy"
+import { API_URL, buildSearchParams } from "./baseApiClient"
 import z from "zod"
-
-//TODO: move the api url to the http proxy, maybe
-const API_URL = import.meta.env.VITE_API_URL
 
 class SolutionsApiClient {
   constructor(private proxy: HttpProxy) {}
 
   async searchSolutions(query: { challengeId?: string }): Promise<Solution[]> {
-    const params = new URLSearchParams()
-    if (query.challengeId) {
-      params.append("challengeId", query.challengeId)
-    }
+    const params = buildSearchParams(query)
 
     const res = await this.proxy.get(
       `${API_URL}/solution`,

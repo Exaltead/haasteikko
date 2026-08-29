@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 
-import BrandedButton from '@/components/basics/BrandedButton.vue';
+import BrandedButton from '@/components/Basics/BrandedButton.vue';
 import { useAuth, getPostLoginRedirect } from '@/plugins/AuthService';
 import { watch, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';

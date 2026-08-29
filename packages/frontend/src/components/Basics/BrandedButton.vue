@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { IconName } from "@/models/iconName"
-import CustomIcon from "./CustomIcon.vue"
+import BaseIcon from "@/components/Icons/BaseIcon.vue"
 import { computed } from "vue"
 import LoadingSpinner from "./LoadingSpinner.vue"
 
@@ -106,7 +106,7 @@ const buttonStyle = computed(() => {
       <div v-if="isSubmitting">
         <LoadingSpinner :background-color="backgroundColor" />
       </div>
-      <CustomIcon v-if="icon && !isSubmitting" :name="icon" :class="iconStyle" />
+      <BaseIcon v-if="icon && !isSubmitting" :name="icon" :class="iconStyle" />
       <span v-if="text" class="text-nowrap text-center" :class="textColor">{{ text }}</span>
     </div>
   </button>

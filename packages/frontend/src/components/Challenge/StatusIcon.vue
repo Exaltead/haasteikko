@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import CustomIcon from '@/components/basics/CustomIcon.vue'
+import BaseIcon from '@/components/Icons/BaseIcon.vue'
 import type { IconName } from '@/models/iconName'
 
 type QuestionStatus = 'warning' | 'selected' | 'unique' | null
@@ -40,9 +40,9 @@ const getIconSize = (size: 'sm' | 'md' | 'lg'): string => {
 
 <template>
   <div class="flex-shrink-0" :class="getIconSize(size)">
-    <CustomIcon 
-      v-if="getIconName(status)" 
-      :name="getIconName(status)!" 
+    <BaseIcon
+      v-if="getIconName(status)"
+      :name="getIconName(status)!"
       :class="getIconColor(status)"
     />
   </div>

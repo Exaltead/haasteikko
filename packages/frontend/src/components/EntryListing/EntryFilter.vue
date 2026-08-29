@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from "vue"
-import BrandedSelect from "@/components/basics/BrandedSelect.vue"
-import CustomIcon from "@/components/basics/CustomIcon.vue"
+import BrandedSelect from "@/components/Basics/BrandedSelect.vue"
+import BaseIcon from "@/components/Icons/BaseIcon.vue"
 import type { YearFilterOption, EntryTypeFilter } from "@/api/preferencesApiClient"
 
 const props = defineProps<{
@@ -54,7 +54,7 @@ function toggleType(type: EntryTypeFilter): void {
           @change="toggleType('Book')"
           class="w-5 h-5 accent-brand-orange"
         />
-        <CustomIcon name="Book" class="w-5 h-5 text-brand-orange" />
+        <BaseIcon name="Book" class="w-5 h-5 text-brand-orange" />
       </label>
 
       <label class="flex items-center gap-2 cursor-pointer">
@@ -64,7 +64,7 @@ function toggleType(type: EntryTypeFilter): void {
           @change="toggleType('Game')"
           class="w-5 h-5 accent-brand-orange"
         />
-        <CustomIcon name="Game" class="w-5 h-5 text-brand-orange" />
+        <BaseIcon name="Game" class="w-5 h-5 text-brand-orange" />
       </label>
     </div>
   </div>

@@ -11,32 +11,56 @@ Haasteikko is a full-stack application for tracking reading, gaming, and watchin
 
 ## Common Commands
 
+### Root workspace (from repo root)
+```bash
+npm run setup         # npm install + cargo fetch
+npm run start:all     # Frontend dev server + backend, concurrently
+npm run build         # Frontend build + cargo build --release
+npm run test:e2e      # Delegates to the frontend Playwright suite
+```
+
 ### Frontend (from `packages/frontend/` directory)
 ```bash
 npm run dev           # Start dev server (localhost:5173)
 npm run build         # Production build (runs type-check + vite build)
-npm run type-check    # TypeScript validation
+npm run type-check    # TypeScript validation (vue-tsc --build)
 npm run lint          # ESLint with auto-fix
-npm run format        # Prettier formatting
+npm run format        # Prettier formatting (src/ only)
 npm run storybook     # Component development (port 6006)
-PLAYWRIGHT_HTML_OPEN=never npx playwright test   # E2E tests (suppress report popup)
+npm run test:e2e      # Playwright E2E tests (Desktop Firefox project)
+PLAYWRIGHT_HTML_OPEN=never npx playwright test   # Same, suppressing the HTML report popup
+npx playwright test e2e/challenge-flow.spec.ts   # Run a single E2E spec
 ```
+`playwright.config.ts` auto-starts the full stack needed for E2E tests via its `webServer`
+entries: the mock OIDC server (`npm run mock-oidc`, port 9000), the backend against a scratch
+`test-e2e.sqlite` (port 3000), and the frontend dev server in `test` mode (port 5173). No manual
+setup is required beyond having `cargo` on PATH — just run the Playwright command.
+
+Component/story tests run through Vitest's browser mode via `@storybook/addon-vitest`
+(configured in `vite.config.ts`); there is no separate `test` script yet — run with
+`npx vitest`.
 
 ### Backend (from `packages/backend/` directory)
 ```bash
 cargo build --release                                    # Local build
 cargo build --release --target x86_64-unknown-linux-gnu  # Production build
 cargo test                                               # Run tests
+cargo test <test_name>                                   # Run a single test
 ```
 
 ## Architecture
 
 ### Frontend
-- **api/**: API clients extending `BaseApiClient` - handles Auth0 token injection
-- **components/**: Reusable Vue components (basics/, Entry/, icons/, etc.)
+- **api/**: API clients extending `BaseApiClient`, each backed by a Zod schema pair
+  (entity schema + "new entity" schema) and an injected `HttpProxy` for the actual HTTP calls
+- **api/HttpProxy.ts**: interface for the get/put/post/delete proxy; `plugins/HttpPlugin.ts`'s
+  `useHttpApi()` composable is the concrete implementation - it attaches the bearer token
+  (via `AuthService`) and validates responses against the Zod schema passed in
+- **components/**: Reusable Vue components (basics/, Entry/, EntryListing/, Challenge/,
+  ChallengeManagement/, icons/, etc.)
 - **views/**: Page-level components
 - **models/**: TypeScript types (challenge.ts, LibraryItem.ts)
-- **plugins/HttpPlugin**: Provides `$http` for API access with authentication
+- **plugins/AuthService.ts**: the actual auth implementation, see Authentication below
 
 Uses Zod for runtime API response validation. Tailwind CSS v4 for styling.
 
@@ -58,9 +82,14 @@ SQLite with migrations in `packages/backend/migrations/`. Foreign keys enforced.
 
 ## Authentication
 
-Auth0 is used for authentication:
+Auth0 is used as the OAuth provider, but the frontend does NOT use the `@auth0/auth0-vue` SDK:
 - Domain: auth.haasteikko.eu
-- Frontend: `@auth0/auth0-vue` library
+- Frontend: a hand-rolled Vue plugin (`plugins/AuthService.ts`) built directly on `oidc-client-ts`'s
+  `UserManager` (authorization-code flow, tokens in `localStorage`). `useAuth()` exposes
+  `isAuthenticated`/`user`/`getAccessTokenSilently`/`loginWithRedirect`/`logout`/`handleCallback`;
+  `authGuard` is the router navigation guard. `src/modules/auth-store.ts` is an older
+  sessionStorage-based helper - check whether it's still wired up before extending it.
+- E2E tests run against `e2e/mock-oidc/server.ts`, a local mock OIDC provider, instead of real Auth0
 - Backend: JWT validation via JWKS endpoint
 
 ## Environment Variables

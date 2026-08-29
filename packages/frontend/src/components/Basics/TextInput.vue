@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { IconName } from '@/models/iconName';
-import CustomIcon from './CustomIcon.vue';
+import BaseIcon from '@/components/Icons/BaseIcon.vue';
 
 defineProps<{
   name: string,
@@ -14,7 +14,7 @@ const model = defineModel()
 <template>
   <div class="flex flex-col gap-2">
     <div class="flex flex-row items-center gap-2">
-      <CustomIcon v-if="icon" :name="icon" class="text-brand-primary" />
+      <BaseIcon v-if="icon" :name="icon" class="text-brand-primary" />
       <label :for="name"> {{ label }}</label>
     </div>
     <input :id="name" type="text" v-model="model" class="rounded border border-brand-primary bg-light-gray" />

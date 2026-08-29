@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import TextInput from '../basics/TextInput.vue';
-import BrandedButton from '../basics/BrandedButton.vue';
+import TextInput from '../Basics/TextInput.vue';
+import BrandedButton from '../Basics/BrandedButton.vue';
 
 import type { Question } from '@/models/challenge';
 import { computed } from 'vue';
-import BrandedSelect from '../basics/BrandedSelect.vue';
+import BrandedSelect from '../Basics/BrandedSelect.vue';
 const model = defineModel<Question>()
 
 const props = defineProps<{

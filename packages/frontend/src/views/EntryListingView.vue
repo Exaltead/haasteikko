@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import EntryFilter from "@/components/EntryListing/EntryFilter.vue"
 import EntryListing from "../components/EntryListing/EntryListing.vue"
-import BrandedButton from "@/components/basics/BrandedButton.vue"
+import BrandedButton from "@/components/Basics/BrandedButton.vue"
 import NewItemModal from "@/components/EntryListing/NewItemModal.vue"
 import SearchBar from "@/components/EntryListing/SearchBar.vue"
 import { ref, watch, onMounted, computed } from "vue"

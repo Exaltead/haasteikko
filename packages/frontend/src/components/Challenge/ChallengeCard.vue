@@ -1,8 +1,7 @@
 <script lang="ts" setup>
 import type { Challenge } from '@/models/challenge'
-import CustomIcon from '@/components/basics/CustomIcon.vue'
-import ProgressBar from '@/components/basics/ProgressBar.vue'
-import IconChevronRight from '@/components/icons/IconChevronRight.vue'
+import BaseIcon from '@/components/Icons/BaseIcon.vue'
+import ProgressBar from '@/components/Basics/ProgressBar.vue'
 
 defineProps<{
   challenge: Challenge
@@ -18,10 +17,10 @@ defineProps<{
     <div class="card flex flex-col md:max-w-[400px] min-w-[250px] w-full p-4 gap-3">
       <div class="flex flex-row justify-between items-center w-full border-b border-brand-orange pb-2">
         <div class="flex flex-row items-center gap-2">
-          <CustomIcon :name="challenge.targetMedia" class="text-brand-orange h-6 w-6" />
+          <BaseIcon :name="challenge.targetMedia" class="text-brand-orange h-6 w-6" />
           <h3 class="font-bold text-lg">{{ challenge.name }}</h3>
         </div>
-        <IconChevronRight class="text-brand-orange h-6 w-6" />
+        <BaseIcon name="ChevronRight" class="text-brand-orange h-6 w-6" />
       </div>
 
       <div class="flex flex-row items-center gap-3">
@@ -34,7 +33,7 @@ defineProps<{
       </div>
 
       <div class="flex flex-row items-center gap-2 text-sm text-gray-600">
-        <CustomIcon :name="challenge.targetMedia" class="h-4 w-4 text-brand-orange" />
+        <BaseIcon :name="challenge.targetMedia" class="h-4 w-4 text-brand-orange" />
         <span>{{ attachedItemCount }} {{ challenge.targetMedia === 'Book' ? 'kirjaa' : 'peliä' }}</span>
       </div>
     </div>

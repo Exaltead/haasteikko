@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
-import IconMenu from './icons/IconMenu.vue';
-import BrandedButton from './basics/BrandedButton.vue';
+import BaseIcon from './Icons/BaseIcon.vue';
+import BrandedButton from './Basics/BrandedButton.vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/plugins/AuthService';
 
@@ -37,7 +37,7 @@ async function doLogout() {
   <div v-if="showNavLinks" class="md:flex bg-brand-primary p-2 md:flex justify-between md:items-center">
     <div class="flex flex-row gap-6 items-center">
       <button @click="toggleNavOpen" class="cursor-pointer md:hidden">
-        <IconMenu class="w-6 text-white" />
+        <BaseIcon name="Menu" class="w-6 text-white" />
       </button>
       <RouterLink :to="{ name: 'home' }" class="flex flex-row items-center gap-2">
         <BrandedButton :onClick="() => {}" icon="Home" variant="secondary" :isPill="true" />

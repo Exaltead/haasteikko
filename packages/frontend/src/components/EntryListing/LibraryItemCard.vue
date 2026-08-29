@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import IconedText from '@/components/basics/IconedText.vue';
+import IconedText from '@/components/Basics/IconedText.vue';
 import type { LibraryItem } from '@/models/LibraryItem';
-import IconChevronRight from '../icons/IconChevronRight.vue';
-import CustomIcon from '../basics/CustomIcon.vue';
+import BaseIcon from '../Icons/BaseIcon.vue';
 import { ref } from 'vue';
 import { useLibraryApi } from '@/api/libraryApiClient';
 
@@ -43,8 +42,8 @@ async function updateItemFavorite(): Promise<void> {
       </div>
 
       <button @click="updateItemFavorite" class="cursor-pointer">
-        <CustomIcon v-if="favorite" name="HeartFull" class="text-brand-orange" />
-        <CustomIcon v-else name="HeartEmpty" class="text-brand-orange" />
+        <BaseIcon v-if="favorite" name="FavoriteSelected" class="text-brand-orange" />
+        <BaseIcon v-else name="FavoriteEmpty" class="text-brand-orange" />
       </button>
 
     </div>
@@ -59,7 +58,7 @@ async function updateItemFavorite(): Promise<void> {
           <IconedText :text="item.creator" icon-name="Author" :heading="false" />
         </div>
 
-        <IconChevronRight class="text-brand-orange h-[30px] w-[30px]" />
+        <BaseIcon name="ChevronRight" class="text-brand-orange h-[30px] w-[30px]" />
 
       </div>
     </RouterLink>

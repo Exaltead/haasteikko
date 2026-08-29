@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import type { Challenge, Question } from '@/models/challenge';
 import { computed, ref } from 'vue';
-import TextInput from '../basics/TextInput.vue';
+import TextInput from '../Basics/TextInput.vue';
 import { v4 } from 'uuid';
-import IconPlus from "@/components/icons/IconPlus.vue"
-import IconBack from '@/components/icons/IconBack.vue';
-import BrandedButton from '../basics/BrandedButton.vue';
+import BaseIcon from "@/components/Icons/BaseIcon.vue"
+import BrandedButton from '../Basics/BrandedButton.vue';
 import { useChallengeApi } from '@/api/challengeApiClient';
 import ChallengeQuestionCard from './ChallengeQuestionCard.vue';
 const challengeApiClient = useChallengeApi()
@@ -102,7 +101,7 @@ const canSubmit = computed(() => {
 <template>
   <div class="p-2">
     <button :onClick="() => emit('close')" class="top-0 left-0 relative">
-      <IconBack class="text-brand-primary w-8 h-fit cursor-pointer" />
+      <BaseIcon name="Back" class="text-brand-primary w-8 h-fit cursor-pointer" />
     </button>
     <div class="px-10 bg-white shadow-lg rounded px-4 py-2 bg-light-gray">
       <div class="flex flex-col gap-4">
@@ -132,7 +131,7 @@ const canSubmit = computed(() => {
           </li>
           <button class="mt-4 ml-4 w-full rounded h-full flex justify-center cursor-pointer bg-brand-primary"
             :onClick="addNewQuestion">
-            <IconPlus class="w-10 text-white"></IconPlus>
+            <BaseIcon name="Plus" class="w-10 text-white"></BaseIcon>
           </button>
         </ul>
       </div>

@@ -1,7 +1,17 @@
 import { z } from "zod"
 import type { HttpProxy } from "./HttpProxy"
 
-const API_URL = import.meta.env.VITE_API_URL
+export const API_URL = import.meta.env.VITE_API_URL
+
+export function buildSearchParams(query: Record<string, string | undefined>): URLSearchParams {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value) {
+      params.append(key, value)
+    }
+  }
+  return params
+}
 
 export abstract class BaseApiClient<
   T extends z.ZodType<{ id: string }>,

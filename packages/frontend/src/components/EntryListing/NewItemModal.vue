@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import Modal from '@/components/basics/PopupModal.vue';
-import BrandedButton from '@/components/basics/BrandedButton.vue';
+import Modal from '@/components/Basics/PopupModal.vue';
+import BrandedButton from '@/components/Basics/BrandedButton.vue';
 import { computed, ref } from 'vue'
-import TextInput from "@/components/basics/TextInput.vue"
+import TextInput from "@/components/Basics/TextInput.vue"
 import type { Book, Game, LibraryItem } from '@/models/LibraryItem';
 import { useLibraryApi } from '@/api/libraryApiClient';
-import BrandedSelect from '@/components/basics/BrandedSelect.vue';
-import DatePicker from '@/components/basics/DatePicker.vue';
+import BrandedSelect from '@/components/Basics/BrandedSelect.vue';
+import DatePicker from '@/components/Basics/DatePicker.vue';
 
 
 const libraryApi = useLibraryApi()

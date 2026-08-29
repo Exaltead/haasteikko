@@ -7,7 +7,7 @@ import { computed, ref, watch } from "vue";
 
 import { useChallengeApi } from "@/api/challengeApiClient";
 import { useAnswerApi } from "@/api/answerApiClient";
-import TextInput from "../basics/TextInput.vue";
+import TextInput from "../Basics/TextInput.vue";
 import AnswerStatus from "./AnswerStatus.vue";
 import { useAnswerSaving } from "@/composables/useAnswerSaving";
 
