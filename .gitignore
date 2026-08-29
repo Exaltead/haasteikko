@@ -62,3 +62,7 @@ __pycache__/
 # Misc
 .DS_Store
 plan.md
+
+prod_db_backups/
+scripts/
+packages/frontend/playwright-report/
