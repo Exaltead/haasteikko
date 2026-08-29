@@ -64,11 +64,13 @@ test("User can create a challenge, add a book, answer a question, and verify res
   // The EntryChallenge component renders a RadioGroup for the Boolean question
   await expect(authenticatedPage.getByText(questionText)).toBeVisible()
 
-  // Click "Kyllä" (Yes) to answer
+  // Click "Kyllä" (Yes) to answer.
+  // Answers auto-save (no "Tallenna" button on this view) - wait for the save request to complete.
+  const answerSaved = authenticatedPage.waitForResponse(
+    (res) => res.url().includes("/answers/") && res.request().method() === "POST",
+  )
   await authenticatedPage.getByText("Kyllä").click()
-
-  // Save the answers
-  await authenticatedPage.getByRole("button", { name: "Tallenna" }).click()
+  await answerSaved
 
   // Step 5 — Verify the library listing page
   await authenticatedPage.goto("/library")
