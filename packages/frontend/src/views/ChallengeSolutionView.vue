@@ -2,6 +2,7 @@
 import { useAnswerApi } from '@/api/answerApiClient';
 import { useChallengeApi } from '@/api/challengeApiClient';
 import { useLibraryApi } from '@/api/libraryApiClient';
+import { useEventApi } from '@/api/eventApiClient';
 
 import { useSolutionsApi } from '@/api/solutionsApiClient';
 import BrandedButton from '@/components/Basics/BrandedButton.vue';
@@ -13,6 +14,8 @@ import EmptyState from '@/components/Basics/EmptyState.vue';
 import QuestionSolutionItem from '@/components/Challenge/QuestionSolutionItem.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
+import type { Event } from '@/models/Event';
+import { withLastCompletedAt } from '@/composables/useEventSummary';
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -21,9 +24,11 @@ const libraryApi = useLibraryApi()
 const challengeApiClient = useChallengeApi()
 const answerApiClient = useAnswerApi()
 const solutionsApiClient = useSolutionsApi()
+const eventApiClient = useEventApi()
 
 
 const allItems = ref<LibraryItem[]>([])
+const allEvents = ref<Event[]>([])
 const questions = ref<Question[]>([])
 const allAnswers = ref<Answer[]>([])
 const challengeName = ref("")
@@ -56,11 +61,12 @@ async function getSolution(): Promise<Solution[]> {
 }
 
 async function loadItems(): Promise<void> {
-  const items = await libraryApi.fetchLibraryItems()
-  allItems.value = items.filter((item) => {
-    const challengeId = route.params.id as string
-    return item.activatedChallengeIds.includes(challengeId)
-  })
+  const [items, events] = await Promise.all([
+    libraryApi.fetchLibraryItems(),
+    eventApiClient.fetchEvents(),
+  ])
+  allItems.value = items
+  allEvents.value = events
 }
 
 const loading = ref(false)
@@ -171,8 +177,12 @@ function getQuestionAnswers(question: Question): Answer[] {
     const trueOptions = options.filter(t => uniqueAnswers.includes(t.answer))
 
     if (questionSolution.multipleAnswerItemIds[0] !== "") {
+      const targetItemId = questionSolution.multipleAnswerItemIds[0]
+      const matchingEventIds = new Set(
+        allEvents.value.filter(e => e.itemId === targetItemId).map(e => e.id),
+      )
       const answered = allAnswers.value
-        .find(t => t.itemId === questionSolution.multipleAnswerItemIds[0]
+        .find(t => matchingEventIds.has(t.eventId)
           && t.questionId === question.id)
 
       if (answered === undefined) {
@@ -231,7 +241,8 @@ const questionToAnswersMap = computed(() => {
   const mapping = questions.value.map((question) => {
     const answers = getQuestionAnswers(question)
       .map(answer => {
-        const item = allItems.value.find(t2 => t2.id === answer.itemId)
+        const event = allEvents.value.find(e => e.id === answer.eventId)
+        const item = event ? allItems.value.find(t2 => t2.id === event.itemId) : undefined
         if (item === undefined) {
           return undefined
         }
@@ -258,15 +269,17 @@ const questionToAnswersMap = computed(() => {
 // Filter library items for the current challenge
 const challengeLibraryItems = computed(() => {
   const challengeId = route.params.id as string
-  const filteredItems = allItems.value.filter(item =>
-    item.activatedChallengeIds.includes(challengeId)
+  const matchingItemIds = new Set(
+    allEvents.value.filter(e => e.activatedChallengeIds.includes(challengeId)).map(e => e.itemId),
   )
+  const filteredItems = allItems.value.filter(item => matchingItemIds.has(item.id))
+  const withCompletion = withLastCompletedAt(filteredItems, allEvents.value)
 
   // Apply same sorting as EntryListing.vue for stable ordering
-  return filteredItems.sort((a, b) => {
-    // Primary: completedAt descending (newest first)
-    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
-    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
+  return withCompletion.sort((a, b) => {
+    // Primary: lastCompletedAt descending (newest first)
+    const dateA = a.lastCompletedAt ? new Date(a.lastCompletedAt).getTime() : 0
+    const dateB = b.lastCompletedAt ? new Date(b.lastCompletedAt).getTime() : 0
     if (dateA !== dateB) return dateB - dateA
 
     // Secondary: addedAt descending (newer additions first)

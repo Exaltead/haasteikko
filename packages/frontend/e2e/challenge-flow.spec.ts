@@ -5,8 +5,8 @@ import { test, expect } from "./test-auth"
  *
  * Prerequisites:
  * - Mock OIDC server running (npm run mock-oidc)
- * - Backend running with JWKS_URL=http://localhost:9000/.well-known/jwks.json
- * - Frontend dev server running with VITE_AUTH_AUTHORITY=http://localhost:9000
+ * - Backend running with JWKS_URL=http://localhost:9001/.well-known/jwks.json
+ * - Frontend dev server running with VITE_AUTH_AUTHORITY=http://localhost:9001
  */
 
 test("User can create a challenge, add a book, answer a question, and verify results", async ({

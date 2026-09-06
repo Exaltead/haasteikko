@@ -11,9 +11,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     title: z.string(),
     author: z.string(),
     translator: z.string().optional(),
-    activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
-    completedAt: z.string(),
     addedAt: z.string().datetime({ offset: true }),
   }),
   z.object({
@@ -21,9 +19,7 @@ const libraryApiItemSchema = z.discriminatedUnion("kind", [
     id: z.string(),
     title: z.string(),
     author: z.string(),
-    activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
-    completedAt: z.string(),
     addedAt: z.string().datetime({ offset: true }),
   }),
 ])
@@ -34,18 +30,14 @@ const newlibraryApiItemSchema = z.discriminatedUnion("kind", [
     title: z.string(),
     author: z.string(),
     translator: z.string().optional(),
-    activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
-    completedAt: z.string(),
     addedAt: z.string().datetime({ offset: true }),
   }),
   z.object({
     kind: z.literal("Game"),
     title: z.string(),
     author: z.string(),
-    activatedChallengeIds: z.string().array(),
     favorite: z.boolean(),
-    completedAt: z.string(),
     addedAt: z.string().datetime({ offset: true }),
   }),
 ])
@@ -61,11 +53,9 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         kind: "Book",
         favorite: item.favorite,
         id: item.id,
-        activatedChallengeIds: item.activatedChallengeIds,
         translator: item.translator,
         title: item.title,
         author: item.author,
-        completedAt: item.completedAt,
         addedAt: item.addedAt,
       }
 
@@ -75,10 +65,8 @@ function mapFromApi(item: ApiLibraryItem): LibraryItem {
         kind: "Game",
         favorite: item.favorite,
         id: item.id,
-        activatedChallengeIds: item.activatedChallengeIds,
         title: item.title,
         creator: item.author,
-        completedAt: item.completedAt,
         addedAt: item.addedAt,
       }
 
@@ -94,9 +82,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         title: item.title,
         author: item.author,
         translator: item.translator,
-        activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
-        completedAt: item.completedAt,
         addedAt: item.addedAt ?  new Date(item.addedAt).toISOString() : new Date().toISOString(),
       }
     case "Game":
@@ -104,9 +90,7 @@ function mapToApi(item: LibraryItem): NewApiLibraryItem {
         kind: "Game",
         title: item.title,
         author: item.creator,
-        activatedChallengeIds: item.activatedChallengeIds,
         favorite: item.favorite,
-        completedAt: item.completedAt,
         addedAt: item.addedAt ?  new Date(item.addedAt).toISOString() : new Date().toISOString(),
       }
   }

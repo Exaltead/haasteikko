@@ -9,9 +9,9 @@ type AnswerSaveState = {
 export function useAnswerSaving(
   answersMap: Ref<Map<string, Answer>>,
   challengeId: string,
-  itemId: string,
+  eventId: string,
   emits: (event: 'submit', answers: Answer[]) => void,
-  answerApiClient: { upsertAnswers: (answers: Answer[], challengeId: string, itemId: string) => Promise<Answer[]> }
+  answerApiClient: { upsertAnswers: (answers: Answer[], challengeId: string, eventId: string) => Promise<Answer[]> }
 ): {
   answerSaveStates: Ref<AnswerSaveState>,
   errorMessage: Ref<string | null>,
@@ -42,7 +42,7 @@ export function useAnswerSaving(
     
     try {
       const answers: Answer[] = [...answersMap.value.values()]
-      await answerApiClient.upsertAnswers(answers, challengeId, itemId)
+      await answerApiClient.upsertAnswers(answers, challengeId, eventId)
       
       // Set success state
       updateAnswerStates(savingAnswers, 'success')

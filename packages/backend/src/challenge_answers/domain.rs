@@ -3,7 +3,7 @@ use crate::{
     auth::User,
     challenge_answers::repository::ChallengeAnswerRepository,
     database::{Database, Repository},
-    library::LibraryRepository,
+    event::EventRepository,
 };
 use rusqlite::Result;
 use std::collections::HashSet;
@@ -11,7 +11,7 @@ use std::collections::HashSet;
 #[derive(Debug, Clone)]
 pub struct AnswerFilter<'a> {
     pub user_id: &'a str,
-    pub item_id: Option<&'a str>,
+    pub event_id: Option<&'a str>,
     pub challenge_id: Option<&'a str>,
 }
 
@@ -19,14 +19,14 @@ impl AnswerFilter<'_> {
     pub fn new(user_id: &str) -> AnswerFilter<'_> {
         AnswerFilter {
             user_id,
-            item_id: None,
+            event_id: None,
             challenge_id: None,
         }
     }
 
-    pub fn with_item_id<'a>(&'a self, item_id: &'a str) -> AnswerFilter<'a> {
+    pub fn with_event_id<'a>(&'a self, event_id: &'a str) -> AnswerFilter<'a> {
         let new = AnswerFilter {
-            item_id: Some(item_id),
+            event_id: Some(event_id),
             ..self.clone()
         };
         new
@@ -49,7 +49,7 @@ pub struct Answer {
     pub kind: String,
     pub answered: bool,
     pub answer: String,
-    pub item_id: String,
+    pub event_id: String,
 }
 
 impl Answer {
@@ -65,25 +65,25 @@ impl Answer {
 pub fn upsert_answers(
     user: &User,
     state: &AppState,
-    item_id: &str,
+    event_id: &str,
     challenge_id: &str,
     answer_set: &[Answer],
 ) -> Result<Vec<Answer>> {
     // These should most likely use the same db
     let db = Database::new(&state.database_path)?;
     let mut repo = ChallengeAnswerRepository::new(db);
-    let mut library_repo = LibraryRepository::new(Database::new(&state.database_path)?);
-    if let Some(item) = library_repo.read_by_id(item_id)? {
-        if item.user_id != user.id {
+    let mut event_repo = EventRepository::new(Database::new(&state.database_path)?);
+    if let Some(event) = event_repo.read_by_id(event_id)? {
+        if event.user_id != user.id {
             return Err(rusqlite::Error::InvalidQuery); // Unauthorized
         }
     } else {
-        return Err(rusqlite::Error::QueryReturnedNoRows); // Item not found
+        return Err(rusqlite::Error::QueryReturnedNoRows); // Event not found
     }
 
     let current_answers = repo.search(
         AnswerFilter::new(&user.id)
-            .with_item_id(&item_id)
+            .with_event_id(&event_id)
             .with_challenge_id(&challenge_id),
     )?;
 
@@ -111,7 +111,7 @@ pub fn upsert_answers(
         repo.update(&answer.id, &answer)?;
     }
 
-    let result = repo.search(AnswerFilter::new(&user.id).with_item_id(&item_id))?;
+    let result = repo.search(AnswerFilter::new(&user.id).with_event_id(&event_id))?;
     Ok(result)
 }
 

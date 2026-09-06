@@ -1,18 +1,24 @@
 <script lang="ts" setup>
 import { useChallengeApi } from '@/api/challengeApiClient';
-import { useLibraryApi } from '@/api/libraryApiClient';;
+import { useLibraryApi } from '@/api/libraryApiClient';
+import { useEventApi } from '@/api/eventApiClient';
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
-import EntryChallenge from '@/components/Entry/EntryChallenge.vue';
+import EntryEvent from '@/components/Entry/EntryEvent.vue';
 import BaseIcon from '@/components/Icons/BaseIcon.vue';
+import BrandedButton from '@/components/Basics/BrandedButton.vue';
+import TabNavigation from '@/components/Basics/TabNavigation.vue';
+import ResponsiveCardWrapper from '@/components/Basics/ResponsiveCardWrapper.vue';
+import EmptyState from '@/components/Basics/EmptyState.vue';
 import type { Challenge } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
-import { TabGroup, TabList, TabPanel, TabPanels, Tab } from '@headlessui/vue';
+import type { Event } from '@/models/Event';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { z } from 'zod';
 
 const libraryApi = useLibraryApi()
 const challengeApiClient = useChallengeApi()
+const eventApi = useEventApi()
 
 const route = useRoute()
 
@@ -24,6 +30,12 @@ function toLibrary() {
 
 const challenges = ref<Challenge[]>([])
 const item = ref<LibraryItem | undefined>(undefined)
+const events = ref<Event[]>([])
+
+// Set by NewItemModal's redirect right after creating an item + its auto-linked event, so the
+// Events tab can open pre-expanded on that event without any extra clicks. One-time navigation
+// state only - not meant to survive a refresh or be shareable.
+const expandEventId = (history.state as { expandEventId?: string } | null)?.expandEventId
 
 async function getChallenges() {
   challenges.value = await challengeApiClient.fetchChallenges()
@@ -33,21 +45,19 @@ async function getItem() {
   const foundItem = await libraryApi.getLibraryItem(itemId)
   item.value = foundItem
 }
+async function getEvents() {
+  const itemId = z.string().parse(route.params.id)
+  events.value = await eventApi.fetchEventsForItem(itemId)
+}
 
 async function fetchData() {
-  await Promise.all([getChallenges(), getItem()])
+  await Promise.all([getChallenges(), getItem(), getEvents()])
 }
 
 
 watch(() => route.params.id, fetchData, { immediate: true })
 
 
-
-function makeTabStyle(selected: boolean) {
-  return selected
-    ? "bg-brand-primary text-white"
-    : "bg-white text-brand-primary hover:bg-brand-primary hover:text-white"
-}
 
 const inEditMode = ref(false)
 function setEditingMode(state: boolean) {
@@ -58,44 +68,81 @@ function setEditingMode(state: boolean) {
   }
 }
 
-const challengeKeys = computed(() => {
-  if (item.value) {
-    const mapped = item.value.activatedChallengeIds.map((t, i) => {
-      const challenge = challenges.value.find(t2 => t2.id === t)
-      return { value: t, display: challenge?.name ?? ("Haaste " + i) }
-    })
+const initialTabIndex = expandEventId ? 1 : 0
 
-    return mapped
-  }
-  return []
+const isAddingEvent = ref(false)
+async function addEvent() {
+  if (!item.value) return
+  isAddingEvent.value = true
+  await eventApi.addEvent({
+    itemId: item.value.id,
+    completedAt: new Date().toISOString(),
+    activatedChallengeIds: [],
+  })
+  isAddingEvent.value = false
+  await getEvents()
+}
+
+const sortedEvents = computed(() => {
+  return [...events.value].sort(
+    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+  )
 })
 
 </script>
 
 <template>
-  <main>
-    <div>
-      <button :onClick="router.back" class="p-4" data-testid="back-button">
-        <BaseIcon name="Back" class="text-brand-primary w-8 h-fit cursor-pointer" />
-      </button>
-      <div class="px-4 md:px-10 flex flex-col gap-10" v-if="item">
-        <EntryBasics @objectDeleted="toLibrary" :challenges="challenges" @object-edited="getItem" :item="item"
-          @edit-mode-changed="setEditingMode" />
-        <TabGroup v-if="!inEditMode && challengeKeys.length > 0">
-          <TabList class="flex flex-row gap-6">
-            <Tab v-for="{ display, value } in challengeKeys" :key="value" v-slot="{ selected }">
-              <button :class="makeTabStyle(selected)">
-                <span>{{ display }}</span>
-              </button>
-            </Tab>
-          </TabList>
-          <TabPanels>
-            <TabPanel v-for="{ value } in challengeKeys" :key="value">
-              <EntryChallenge :itemId="item.id" :challengeId="value" />
-            </TabPanel>
-          </TabPanels>
-        </TabGroup>
-      </div>
+  <div>
+    <div v-if="!item">
+      <h1>Ladataan...</h1>
     </div>
-  </main>
+    <div v-else class="flex flex-col items-center px-0 md:px-4">
+      <ResponsiveCardWrapper>
+        <div class="flex flex-col w-full">
+          <div
+            class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky top-0 z-10">
+            <BrandedButton :onClick="router.back" icon="Back" variant="primary" class="ml-2 md:ml-0"
+              data-testid="back-button" />
+            <div class="flex items-center gap-2">
+              <BaseIcon :name="item.kind" class="w-6 h-6 md:w-8 md:h-8 text-brand-orange/70" />
+              <h1 class="text-lg md:text-xl font-bold whitespace-normal">{{ item.title }}</h1>
+            </div>
+            <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->
+          </div>
+
+          <TabNavigation tab1Label="Tiedot" :tab2Label="`Tapahtumat (${sortedEvents.length})`"
+            :default-index="initialTabIndex">
+            <template #tab1>
+              <div class="w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
+                <EntryBasics @objectDeleted="toLibrary" @object-edited="getItem" :item="item"
+                  @edit-mode-changed="setEditingMode" />
+              </div>
+            </template>
+
+            <template #tab2>
+              <div class="flex flex-col gap-3 w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
+                <EmptyState v-if="sortedEvents.length === 0" message="Ei vielä tapahtumia" />
+                <EntryEvent
+                  v-for="event in sortedEvents"
+                  :key="event.id"
+                  :event="event"
+                  :item="item"
+                  :challenges="challenges"
+                  :initially-expanded="event.id === expandEventId"
+                  @event-updated="getEvents"
+                />
+                <BrandedButton
+                  text="Lisää uusi tapahtuma"
+                  :onClick="addEvent"
+                  icon="Plus"
+                  :is-submitting="isAddingEvent"
+                  variant="primary"
+                />
+              </div>
+            </template>
+          </TabNavigation>
+        </div>
+      </ResponsiveCardWrapper>
+    </div>
+  </div>
 </template>

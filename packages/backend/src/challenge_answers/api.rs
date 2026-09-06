@@ -19,7 +19,7 @@ use crate::{
 
 pub fn routes() -> Router<AppState> {
     Router::new().route("/answers", get(search_answers)).route(
-        "/answers/{itemId}/{challengeId}",
+        "/answers/{eventId}/{challengeId}",
         post(upsert_answers_route),
     )
 }
@@ -27,7 +27,7 @@ pub fn routes() -> Router<AppState> {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct AnswersQuery {
-    item_id: Option<String>,
+    event_id: Option<String>,
     challenge_id: Option<String>,
 }
 
@@ -39,7 +39,7 @@ struct ApiAnswer {
     pub question_id: String,
     pub answered: bool,
     pub answer: String,
-    pub item_id: String,
+    pub event_id: String,
 }
 
 impl ApiAnswer {
@@ -50,11 +50,11 @@ impl ApiAnswer {
             kind: answer.kind.clone(),
             answered: answer.answered,
             answer: answer.answer.clone(),
-            item_id: answer.item_id.clone(),
+            event_id: answer.event_id.clone(),
         }
     }
 
-    fn to_domain(&self, user_id: &str, item_id: &Uuid, challenge_id: &Uuid) -> Answer {
+    fn to_domain(&self, user_id: &str, event_id: &Uuid, challenge_id: &Uuid) -> Answer {
         Answer {
             id: self.id.clone().unwrap_or(Uuid::new_v4().to_string()),
             question_id: self.question_id.clone(),
@@ -63,7 +63,7 @@ impl ApiAnswer {
             kind: self.kind.clone(),
             answered: self.answered,
             answer: self.answer.clone(),
-            item_id: item_id.to_string(),
+            event_id: event_id.to_string(),
         }
     }
 }
@@ -81,7 +81,7 @@ async fn search_answers(
 ) -> Result<Json<AnswersList>, StatusCode> {
     let filter = AnswerFilter {
         user_id: &user.id,
-        item_id: query.item_id.as_deref(),
+        event_id: query.event_id.as_deref(),
         challenge_id: query.challenge_id.as_deref(),
     };
     let answers = get_challenge_answers(&state.database_path, filter)
@@ -96,18 +96,18 @@ async fn search_answers(
 async fn upsert_answers_route(
     user: User,
     State(state): State<AppState>,
-    Path((item_id, challenge_id)): Path<(Uuid, Uuid)>,
+    Path((event_id, challenge_id)): Path<(Uuid, Uuid)>,
     Json(answer_list): Json<AnswersList>,
 ) -> Result<Json<AnswersList>, StatusCode> {
     let domain_awnsers: Vec<Answer> = answer_list
         .answers
         .iter()
-        .map(|a| a.to_domain(&user.id, &item_id, &challenge_id))
+        .map(|a| a.to_domain(&user.id, &event_id, &challenge_id))
         .collect();
     let answers = upsert_answers(
         &user,
         &state,
-        &item_id.to_string(),
+        &event_id.to_string(),
         &challenge_id.to_string(),
         &domain_awnsers,
     )

@@ -2,8 +2,9 @@
 import { useChallengeApi } from '@/api/challengeApiClient'
 import { useAnswerApi } from '@/api/answerApiClient'
 import { useLibraryApi } from '@/api/libraryApiClient'
+import { useEventApi } from '@/api/eventApiClient'
 import type { Challenge, Answer } from '@/models/challenge'
-import type { LibraryItem } from '@/models/LibraryItem'
+import type { Event } from '@/models/Event'
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ChallengeCard from '@/components/Challenge/ChallengeCard.vue'
@@ -18,15 +19,18 @@ import {
   getCompletedCount,
   getTotalCount,
 } from '@/composables/useChallengeProgress'
+import { withLastCompletedAt, type LibraryItemWithCompletion } from '@/composables/useEventSummary'
 
 const router = useRouter()
 const challengeApiClient = useChallengeApi()
 const answerApiClient = useAnswerApi()
 const libraryApiClient = useLibraryApi()
+const eventApiClient = useEventApi()
 
 const challenges = ref<Challenge[]>([])
 const answersByChallenge = ref<Map<string, Answer[]>>(new Map())
-const libraryItems = ref<LibraryItem[]>([])
+const libraryItems = ref<LibraryItemWithCompletion[]>([])
+const events = ref<Event[]>([])
 const loading = ref(true)
 const showNewItemModal = ref(false)
 
@@ -41,13 +45,15 @@ const recentLibraryItems = computed(() => {
 async function loadData() {
   loading.value = true
 
-  const [challengesResult, itemsResult] = await Promise.all([
+  const [challengesResult, itemsResult, eventsResult] = await Promise.all([
     challengeApiClient.fetchChallenges(),
-    libraryApiClient.fetchLibraryItems()
+    libraryApiClient.fetchLibraryItems(),
+    eventApiClient.fetchEvents(),
   ])
 
   challenges.value = challengesResult
-  libraryItems.value = itemsResult
+  events.value = eventsResult
+  libraryItems.value = withLastCompletedAt(itemsResult, eventsResult)
 
   const active = filterByStatus(challenges.value, "active")
   const answerPromises = active.map(async (challenge) => {
@@ -75,13 +81,13 @@ function closeNewItemModal() {
   showNewItemModal.value = false
 }
 
-function onNewItemSubmitComplete(id: string) {
+function onNewItemSubmitComplete(id: string, eventId: string) {
   showNewItemModal.value = false
-  router.push({ name: 'libraryItem', params: { id } })
+  router.push({ name: 'libraryItem', params: { id }, state: { expandEventId: eventId } })
 }
 
 async function onItemUpdated() {
-  libraryItems.value = await libraryApiClient.fetchLibraryItems()
+  libraryItems.value = withLastCompletedAt(await libraryApiClient.fetchLibraryItems(), events.value)
 }
 </script>
 
@@ -110,7 +116,7 @@ async function onItemUpdated() {
             :challenge="challenge"
             :completed-count="getCompletedCount(challenge, answersByChallenge.get(challenge.id) ?? [])"
             :total-count="getTotalCount(challenge)"
-            :attached-item-count="getAttachedItemCount(challenge, libraryItems)"
+            :attached-item-count="getAttachedItemCount(challenge, libraryItems, events)"
           />
         </div>
       </div>

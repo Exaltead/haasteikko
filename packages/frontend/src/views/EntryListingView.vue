@@ -12,17 +12,19 @@ import {
   type EntryTypeFilter,
 } from "@/api/preferencesApiClient"
 import { useLibraryApi } from "@/api/libraryApiClient"
-import type { LibraryItem } from "@/models/LibraryItem"
+import { useEventApi } from "@/api/eventApiClient"
+import { withLastCompletedAt, type LibraryItemWithCompletion } from "@/composables/useEventSummary"
 
 const router = useRouter()
 const preferencesApi = usePreferencesApi()
 const libraryApi = useLibraryApi()
+const eventApi = useEventApi()
 
 const showFilter = ref(false)
 const yearFilter = ref<YearFilterOption>("all")
 const typeFilter = ref<EntryTypeFilter[]>(["Book", "Game"])
 const searchQuery = ref("")
-const items = ref<LibraryItem[]>([])
+const items = ref<LibraryItemWithCompletion[]>([])
 const savedYearPreference = ref<string | null | undefined>(undefined)
 const savedTypePreference = ref<string[] | null | undefined>(undefined)
 
@@ -37,7 +39,11 @@ const availableYears = computed(() => {
 })
 
 async function fetchItems() {
-  items.value = await libraryApi.fetchLibraryItems()
+  const [libraryItems, events] = await Promise.all([
+    libraryApi.fetchLibraryItems(),
+    eventApi.fetchEvents(),
+  ])
+  items.value = withLastCompletedAt(libraryItems, events)
 }
 
 onMounted(async () => {
@@ -101,10 +107,10 @@ function createNew() {
 
 const showDialog = ref(false)
 
-function onNewItemSubmitComplete(id: string): void {
+function onNewItemSubmitComplete(id: string, eventId: string): void {
   showDialog.value = false
 
-  router.push({ name: "libraryItem", params: { id } })
+  router.push({ name: "libraryItem", params: { id }, state: { expandEventId: eventId } })
 }
 
 function closeModal(): void {

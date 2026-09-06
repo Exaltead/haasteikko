@@ -19,7 +19,7 @@ export const answerSchema = z.object({
   questionId: z.string(),
   answered: z.boolean(),
   answer: z.enum(["yes", "no"]).or(z.string()),
-  itemId: z.string(),
+  eventId: z.string(),
 })
 
 export type Answer = z.infer<typeof answerSchema>

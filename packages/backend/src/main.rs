@@ -5,6 +5,7 @@ mod auth;
 mod challenge;
 mod challenge_answers;
 mod database;
+mod event;
 mod library;
 mod migrations;
 mod preferences;
@@ -59,10 +60,12 @@ async fn main() {
         .nest("/api", solution::routes())
         .nest("/api", challenge_answers::routes())
         .nest("/api", preferences::routes())
+        .nest("/api", event::routes())
         .with_state(app_state)
         .layer(cors);
 
-    let address = "0.0.0.0:3000";
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let address = format!("0.0.0.0:{port}");
     println!("Listening on http://{}", address);
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     axum::serve(listener, app).await.unwrap();

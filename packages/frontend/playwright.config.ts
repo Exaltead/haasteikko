@@ -31,7 +31,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: "http://localhost:5173/",
+    baseURL: "http://localhost:5183/",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -72,20 +72,20 @@ export default defineConfig({
   /* Run servers before starting the tests */
   webServer: [
     {
-      command: "npm run mock-oidc",
-      url: "http://localhost:9000/health",
+      command: "OIDC_PORT=9001 npm run mock-oidc",
+      url: "http://localhost:9001/health",
       reuseExistingServer: !process.env.CI,
     },
     {
       command:
-        "cd ../../packages/backend && rm -f test-e2e.sqlite && JWKS_URL=http://localhost:9000/.well-known/jwks.json REQUIRED_AUDIENCE=https://haasteikko.eu/api MIGRATIONS_PATH=migrations DATABASE_PATH=test-e2e.sqlite cargo run",
-      url: "http://localhost:3000/api/ping",
+        "cd ../../packages/backend && rm -f test-e2e.sqlite && PORT=3001 JWKS_URL=http://localhost:9001/.well-known/jwks.json REQUIRED_AUDIENCE=https://haasteikko.eu/api MIGRATIONS_PATH=migrations DATABASE_PATH=test-e2e.sqlite cargo run",
+      url: "http://localhost:3001/api/ping",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {
-      command: "npm run dev -- --mode test",
-      url: "http://localhost:5173/",
+      command: "npm run dev -- --mode test --port 5183 --strictPort",
+      url: "http://localhost:5183/",
       reuseExistingServer: !process.env.CI,
     },
   ],

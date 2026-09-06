@@ -5,17 +5,19 @@ import { computed, ref } from 'vue'
 import TextInput from "@/components/Basics/TextInput.vue"
 import type { Book, Game, LibraryItem } from '@/models/LibraryItem';
 import { useLibraryApi } from '@/api/libraryApiClient';
+import { useEventApi } from '@/api/eventApiClient';
 import BrandedSelect from '@/components/Basics/BrandedSelect.vue';
 import DatePicker from '@/components/Basics/DatePicker.vue';
 
 
 const libraryApi = useLibraryApi()
+const eventApi = useEventApi()
 const { isModalOpen } = defineProps<{
   isModalOpen: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: "submitComplete", id: string): void
+  (e: "submitComplete", id: string, eventId: string): void
   (e: "close"): void
 }>()
 
@@ -86,9 +88,7 @@ async function submitModal(): Promise<void> {
         title: bookModel.value.name,
         author: bookModel.value.author,
         translator: bookModel.value.translator,
-        activatedChallengeIds: [],
         favorite: false,
-        completedAt: completedAt.value.toISOString()
       }
       return newBook
     }
@@ -97,9 +97,7 @@ async function submitModal(): Promise<void> {
         kind: 'Game',
         title: gameModel.value.title,
         creator: gameModel.value.creator,
-        activatedChallengeIds: [],
         favorite: false,
-        completedAt: completedAt.value.toISOString()
       }
 
       return newGame
@@ -120,9 +118,16 @@ async function submitModal(): Promise<void> {
     isSubmitting.value = false
     return
   }
+
+  const newEventId = await eventApi.addEvent({
+    itemId: newId,
+    completedAt: completedAt.value.toISOString(),
+    activatedChallengeIds: [],
+  })
+
   isSubmitting.value = false
   resetState()
-  emit("submitComplete", newId)
+  emit("submitComplete", newId, newEventId)
 }
 
 const kinds = [

@@ -14,7 +14,7 @@ import { useAnswerSaving } from "@/composables/useAnswerSaving";
 const challengeApiClient = useChallengeApi()
 const answerApiClient = useAnswerApi()
 
-const props = defineProps<{ itemId: string, challengeId: string }>()
+const props = defineProps<{ eventId: string, challengeId: string }>()
 const emits = defineEmits<{
   (e: 'submit', answers: Answer[]): void
 }>()
@@ -28,11 +28,11 @@ const {
   isAnswerDisabled, 
   saveAnswers, 
   updateAnswerStates 
-} = useAnswerSaving(answersMap, props.challengeId, props.itemId, emits, answerApiClient)
+} = useAnswerSaving(answersMap, props.challengeId, props.eventId, emits, answerApiClient)
 const questions = ref<Question[]>([])
 const challengeName = ref<string>("Haaste")
 async function refreshData(): Promise<void> {
-  const answers = await answerApiClient.searchAnswers({ challengeId: props.challengeId, itemId: props.itemId })
+  const answers = await answerApiClient.searchAnswers({ challengeId: props.challengeId, eventId: props.eventId })
   const challenge = (await challengeApiClient.fetchChallenges())
     .find(t => t.id === props.challengeId)
   if (challenge) {
@@ -53,7 +53,7 @@ async function refreshData(): Promise<void> {
         questionId: question.id,
         answered: false,
         answer: "",
-        itemId: props.itemId,
+        eventId: props.eventId,
       })
     }
     else if (question.kind === "Boolean") {
@@ -63,7 +63,7 @@ async function refreshData(): Promise<void> {
         questionId: question.id,
         answered: false,
         answer: "no",
-        itemId: props.itemId,
+        eventId: props.eventId,
       })
     }
     else {

@@ -1,5 +1,6 @@
 import type { Answer, Challenge } from "@/models/challenge"
 import type { LibraryItem } from "@/models/LibraryItem"
+import type { Event } from "@/models/Event"
 
 export function getCompletedCount(challenge: Challenge, answers: Answer[]): number {
   const questionsWithAnswers = new Set<string>()
@@ -24,9 +25,16 @@ export function getTotalCount(challenge: Challenge): number {
   return challenge.questions.length
 }
 
-export function getAttachedItemCount(challenge: Challenge, libraryItems: LibraryItem[]): number {
+export function getAttachedItemCount(
+  challenge: Challenge,
+  libraryItems: LibraryItem[],
+  events: Event[],
+): number {
+  const matchingItemIds = new Set(
+    events.filter((e) => e.activatedChallengeIds.includes(challenge.id)).map((e) => e.itemId),
+  )
   return libraryItems.filter(
-    (item) => item.kind === challenge.targetMedia && item.activatedChallengeIds.includes(challenge.id),
+    (item) => item.kind === challenge.targetMedia && matchingItemIds.has(item.id),
   ).length
 }
 
