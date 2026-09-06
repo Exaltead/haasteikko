@@ -19,7 +19,8 @@ pub struct Event {
 pub struct NewEvent {
     pub item_id: String,
     pub completed_at: String,
-    pub activated_challenge_ids: Vec<String>,
+    #[serde(default)]
+    pub activated_challenge_ids: Option<Vec<String>>,
 }
 
 pub use api::routes;

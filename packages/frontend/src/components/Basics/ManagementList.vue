@@ -1,7 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import BrandedButton from './BrandedButton.vue';
-
+import { ref } from 'vue'
 
 type ManagementItem = {
   value: string
@@ -11,61 +9,38 @@ type ManagementItem = {
 const { items, allOptions } = defineProps<{
   items: ManagementItem[]
   allOptions: ManagementItem[]
-
-
-}>();
+}>()
 
 const emit = defineEmits<{
   (e: "stateChanged", currentValues: string[]): void
 }>()
 
-const currentState = ref<ManagementItem[]>([...items])
+const currentValues = ref<string[]>(items.map((item) => item.value))
 
-function onDelete(value: string) {
-  const index = currentState.value.findIndex(t => t.value === value)
-  if (index !== -1) {
-    currentState.value.splice(index, 1)
+function toggle(value: string, checked: boolean) {
+  if (checked) {
+    if (!currentValues.value.includes(value)) {
+      currentValues.value = [...currentValues.value, value]
+    }
+  } else {
+    currentValues.value = currentValues.value.filter((v) => v !== value)
   }
-  emit("stateChanged", currentState.value.map(t => t.value))
+  emit("stateChanged", currentValues.value)
 }
-
-function onAdd(value: string) {
-  const toBeAdded = allOptions.find(t => t.value === value)
-  if (toBeAdded) {
-    currentState.value.push(toBeAdded)
-    emit("stateChanged", currentState.value.map(t => t.value))
-    newSelection.value = ''
-  }
-}
-
-const newSelection = ref<string>('')
-
-const currentOptions = computed(() => {
-  return allOptions.filter(t => !currentState.value.some(t2 => t2.value === t.value))
-})
 </script>
 
 <template>
-  <div>
-    <ul class="list-disc">
-      <li v-for="item in currentState" :key="item.value">
-        <div class="flex flex-row gap-2">
-          <span class="">
-            {{ item.display }}
-          </span>
-          <BrandedButton icon="Delete" :onClick="() => onDelete(item.value)" variant="secondary" />
-        </div>
-      </li>
-    </ul>
-    <div class="flex flex-row gap-2" v-if="currentOptions.length > 0">
-      <select v-model="newSelection" class="rounded border-brand-primary border-1 px-2 py-1 bg-light-gray">
-        <option v-for="option in currentOptions" :key="option.value" :value="option.value">
-          {{ option.display }}
-        </option>
-      </select>
-      <BrandedButton text="Lisää" :onClick="() => onAdd(newSelection)" variant="primary" />
-    </div>
-  </div>
-
-
+  <ul class="flex flex-col gap-1">
+    <li v-for="option in allOptions" :key="option.value">
+      <label class="flex flex-row items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          class="w-4 h-4 accent-brand-primary cursor-pointer"
+          :checked="currentValues.includes(option.value)"
+          @change="toggle(option.value, ($event.target as HTMLInputElement).checked)"
+        />
+        <span>{{ option.display }}</span>
+      </label>
+    </li>
+  </ul>
 </template>

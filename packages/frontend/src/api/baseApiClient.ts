@@ -32,7 +32,7 @@ export abstract class BaseApiClient<
     return await this.proxy.put(`${this.baseUrl}/${id}`, validated)
   }
 
-  protected async addEntity(newEntity: Omit<z.infer<T>, "id" | "addedAt">): Promise<string> {
+  protected async addEntity(newEntity: z.infer<TNew>): Promise<string> {
     const validated = this.newSchema.parse(newEntity)
     const { id } = await this.proxy.post(this.baseUrl, validated, z.object({ id: z.string() }))
     return id

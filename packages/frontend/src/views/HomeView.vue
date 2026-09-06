@@ -10,7 +10,6 @@ import { useRouter } from 'vue-router'
 import ChallengeCard from '@/components/Challenge/ChallengeCard.vue'
 import LoadingSpinner from '@/components/Basics/LoadingSpinner.vue'
 import EntryListing from '@/components/EntryListing/EntryListing.vue'
-import NewItemModal from '@/components/EntryListing/NewItemModal.vue'
 import BrandedButton from '@/components/Basics/BrandedButton.vue'
 import BaseIcon from '@/components/Icons/BaseIcon.vue'
 import {
@@ -32,7 +31,6 @@ const answersByChallenge = ref<Map<string, Answer[]>>(new Map())
 const libraryItems = ref<LibraryItemWithCompletion[]>([])
 const events = ref<Event[]>([])
 const loading = ref(true)
-const showNewItemModal = ref(false)
 
 const activeChallenges = computed(() => filterByStatus(challenges.value, "active"))
 
@@ -73,17 +71,8 @@ async function loadData() {
 
 onMounted(loadData)
 
-function openNewItemModal() {
-  showNewItemModal.value = true
-}
-
-function closeNewItemModal() {
-  showNewItemModal.value = false
-}
-
-function onNewItemSubmitComplete(id: string, eventId: string) {
-  showNewItemModal.value = false
-  router.push({ name: 'libraryItem', params: { id }, state: { expandEventId: eventId } })
+function openNewItemPage() {
+  router.push({ name: 'newLibraryItem' })
 }
 
 async function onItemUpdated() {
@@ -136,7 +125,7 @@ async function onItemUpdated() {
           </RouterLink>
           <BrandedButton
             text="Lisää uusi"
-            :onClick="openNewItemModal"
+            :onClick="openNewItemPage"
             icon="Plus"
             :isPill="true"
             variant="primary"
@@ -160,11 +149,5 @@ async function onItemUpdated() {
         />
       </div>
     </div>
-
-    <NewItemModal
-      :is-modal-open="showNewItemModal"
-      @submitComplete="onNewItemSubmitComplete"
-      @close="closeNewItemModal"
-    />
   </div>
 </template>

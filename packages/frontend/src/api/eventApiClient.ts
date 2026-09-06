@@ -1,9 +1,13 @@
+import { z } from "zod"
 import { BaseApiClient, buildSearchParams } from "./baseApiClient"
 import { eventSchema, type Event } from "@/models/Event"
 import type { HttpProxy } from "./HttpProxy"
 import { useHttpApi } from "@/plugins/HttpPlugin"
 
-const newEventSchema = eventSchema.omit({ id: true })
+const newEventSchema = eventSchema.omit({ id: true }).extend({
+  activatedChallengeIds: z.string().array().optional(),
+})
+type NewEvent = z.infer<typeof newEventSchema>
 
 class EventApiClient extends BaseApiClient<typeof eventSchema, typeof newEventSchema> {
   constructor(proxy: HttpProxy) {
@@ -18,7 +22,7 @@ class EventApiClient extends BaseApiClient<typeof eventSchema, typeof newEventSc
     return await this.fetchEntities(buildSearchParams({ itemId }))
   }
 
-  async addEvent(event: Omit<Event, "id">): Promise<string> {
+  async addEvent(event: NewEvent): Promise<string> {
     return await this.addEntity(event)
   }
 

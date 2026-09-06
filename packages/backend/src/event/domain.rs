@@ -41,6 +41,18 @@ pub fn get_event_by_id(
     }
 }
 
+fn active_challenge_ids_for_kind(
+    state: &AppState,
+    kind: &str,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let mut challenge_repo = ChallengeRepository::new(Database::new(&state.database_path)?);
+    let challenges = challenge_repo.search(ChallengeFilter {
+        status: Some("active".to_string()),
+        media_type: Some(kind.to_string()),
+    })?;
+    Ok(challenges.iter().map(|c| c.id.clone()).collect())
+}
+
 pub fn create_event(
     user: &User,
     state: &AppState,
@@ -57,14 +69,10 @@ pub fn create_event(
         return Err("Not authorized".into());
     }
 
-    // Should maybe reuse the same connection
-    let mut challenge_repo = ChallengeRepository::new(Database::new(&state.database_path)?);
-    let challenges = challenge_repo.search(ChallengeFilter {
-        status: Some("active".to_string()),
-        media_type: Some(item.kind.clone()),
-    })?;
-
-    let activated_challenge_ids = challenges.iter().map(|c| c.id.clone()).collect();
+    let activated_challenge_ids = match &new_event.activated_challenge_ids {
+        Some(ids) => ids.clone(),
+        None => active_challenge_ids_for_kind(state, &item.kind)?,
+    };
 
     let mut repo = EventRepository::new(db);
 
@@ -89,20 +97,28 @@ pub fn update_event(
     let db = Database::new(&state.database_path)?;
     let mut repo = EventRepository::new(db);
 
-    if let Some(existing_event) = repo.read_by_id(id)? {
-        if existing_event.user_id != user.id {
-            return Ok(false);
+    let existing_event = match repo.read_by_id(id)? {
+        Some(e) if e.user_id == user.id => e,
+        _ => return Ok(false),
+    };
+
+    let activated_challenge_ids = match &new_event.activated_challenge_ids {
+        Some(ids) => ids.clone(),
+        None => {
+            let mut library_repo = LibraryRepository::new(Database::new(&state.database_path)?);
+            let item = library_repo
+                .read_by_id(&existing_event.item_id)?
+                .ok_or("Item not found")?;
+            active_challenge_ids_for_kind(state, &item.kind)?
         }
-    } else {
-        return Ok(false);
-    }
+    };
 
     let event = Event {
         id: id.to_string(),
         user_id: user.id.clone(),
         item_id: new_event.item_id.clone(),
         completed_at: new_event.completed_at.clone(),
-        activated_challenge_ids: new_event.activated_challenge_ids.clone(),
+        activated_challenge_ids,
     };
 
     let updated = repo.update(id, &event)?;

@@ -2,7 +2,6 @@
 import EntryFilter from "@/components/EntryListing/EntryFilter.vue"
 import EntryListing from "../components/EntryListing/EntryListing.vue"
 import BrandedButton from "@/components/Basics/BrandedButton.vue"
-import NewItemModal from "@/components/EntryListing/NewItemModal.vue"
 import SearchBar from "@/components/EntryListing/SearchBar.vue"
 import { ref, watch, onMounted, computed } from "vue"
 import { useRouter } from "vue-router"
@@ -102,19 +101,7 @@ watch(typeFilter, async (newValue) => {
 })
 
 function createNew() {
-  showDialog.value = true
-}
-
-const showDialog = ref(false)
-
-function onNewItemSubmitComplete(id: string, eventId: string): void {
-  showDialog.value = false
-
-  router.push({ name: "libraryItem", params: { id }, state: { expandEventId: eventId } })
-}
-
-function closeModal(): void {
-  showDialog.value = false
+  router.push({ name: "newLibraryItem" })
 }
 
 function toggleFilter(): void {
@@ -156,11 +143,6 @@ function toggleFilter(): void {
         :typeFilter="typeFilter"
         :searchQuery="searchQuery"
         @itemUpdated="fetchItems"
-      />
-      <NewItemModal
-        :is-modal-open="showDialog"
-        @submitComplete="onNewItemSubmitComplete"
-        @close="closeModal"
       />
     </div>
   </main>

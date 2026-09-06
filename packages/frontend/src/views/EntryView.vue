@@ -4,6 +4,7 @@ import { useLibraryApi } from '@/api/libraryApiClient';
 import { useEventApi } from '@/api/eventApiClient';
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
 import EntryEvent from '@/components/Entry/EntryEvent.vue';
+import NewEventModal from '@/components/Entry/NewEventModal.vue';
 import BaseIcon from '@/components/Icons/BaseIcon.vue';
 import BrandedButton from '@/components/Basics/BrandedButton.vue';
 import TabNavigation from '@/components/Basics/TabNavigation.vue';
@@ -32,10 +33,13 @@ const challenges = ref<Challenge[]>([])
 const item = ref<LibraryItem | undefined>(undefined)
 const events = ref<Event[]>([])
 
-// Set by NewItemModal's redirect right after creating an item + its auto-linked event, so the
+// Set by NewEntryView's redirect right after creating an item + its auto-linked event, so the
 // Events tab can open pre-expanded on that event without any extra clicks. One-time navigation
-// state only - not meant to survive a refresh or be shareable.
-const expandEventId = (history.state as { expandEventId?: string } | null)?.expandEventId
+// state only - not meant to survive a refresh or be shareable. Also updated after manually
+// creating an event via NewEventModal, so that event opens pre-expanded too.
+const expandEventId = ref<string | undefined>(
+  (history.state as { expandEventId?: string } | null)?.expandEventId,
+)
 
 async function getChallenges() {
   challenges.value = await challengeApiClient.fetchChallenges()
@@ -68,18 +72,12 @@ function setEditingMode(state: boolean) {
   }
 }
 
-const initialTabIndex = expandEventId ? 1 : 0
+const initialTabIndex = expandEventId.value ? 1 : 0
 
-const isAddingEvent = ref(false)
-async function addEvent() {
-  if (!item.value) return
-  isAddingEvent.value = true
-  await eventApi.addEvent({
-    itemId: item.value.id,
-    completedAt: new Date().toISOString(),
-    activatedChallengeIds: [],
-  })
-  isAddingEvent.value = false
+const showEventModal = ref(false)
+async function onEventCreated(eventId: string) {
+  showEventModal.value = false
+  expandEventId.value = eventId
   await getEvents()
 }
 
@@ -133,9 +131,8 @@ const sortedEvents = computed(() => {
                 />
                 <BrandedButton
                   text="Lisää uusi tapahtuma"
-                  :onClick="addEvent"
+                  :onClick="() => (showEventModal = true)"
                   icon="Plus"
-                  :is-submitting="isAddingEvent"
                   variant="primary"
                 />
               </div>
@@ -143,6 +140,13 @@ const sortedEvents = computed(() => {
           </TabNavigation>
         </div>
       </ResponsiveCardWrapper>
+      <NewEventModal
+        :is-modal-open="showEventModal"
+        :item="item"
+        :challenges="challenges"
+        @submit-complete="onEventCreated"
+        @close="showEventModal = false"
+      />
     </div>
   </div>
 </template>
