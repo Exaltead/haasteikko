@@ -9,8 +9,7 @@ import { useLibraryApi } from '@/api/libraryApiClient';
 import { useEventApi } from '@/api/eventApiClient';
 import { useChallengeApi } from '@/api/challengeApiClient';
 import BrandedSelect from '@/components/Basics/BrandedSelect.vue';
-import DatePicker from '@/components/Basics/DatePicker.vue';
-import ManagementList from '@/components/Basics/ManagementList.vue';
+import EventFields from '@/components/Entry/EventFields.vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter()
@@ -65,21 +64,17 @@ watch(kind, () => {
   activatedChallengeIds.value = defaultActivatedChallengeIds()
 })
 
-const selectedChallengeItems = computed(() => {
-  return activatedChallengeIds.value
-    .map((id) => challenges.value.find((challenge) => challenge.id === id))
-    .filter((challenge): challenge is Challenge => challenge !== undefined)
-    .map((challenge) => ({ value: challenge.id, display: challenge.name }))
+const challengeOptions = computed(() => {
+  return challenges.value.filter((challenge) => challenge.targetMedia === kind.value)
 })
 
-const allChallengeOptions = computed(() => {
-  return challenges.value
-    .filter((challenge) => challenge.targetMedia === kind.value)
-    .map((challenge) => ({ value: challenge.id, display: challenge.name }))
-})
+// The item's first event is optional: the user can remove the event card to add the item without one
+const includeEvent = ref(true)
 
-function onChallengeStateChanged(challengeIds: string[]) {
-  activatedChallengeIds.value = challengeIds
+function addEvent() {
+  completedAt.value = new Date()
+  activatedChallengeIds.value = defaultActivatedChallengeIds()
+  includeEvent.value = true
 }
 
 const isSubmitting = ref(false)
@@ -146,11 +141,13 @@ async function submitForm(): Promise<void> {
       return
     }
 
-    await eventApi.addEvent({
-      itemId: newId,
-      completedAt: completedAt.value.toISOString(),
-      activatedChallengeIds: activatedChallengeIds.value,
-    })
+    if (includeEvent.value) {
+      await eventApi.addEvent({
+        itemId: newId,
+        completedAt: completedAt.value.toISOString(),
+        activatedChallengeIds: activatedChallengeIds.value,
+      })
+    }
   } catch (error) {
     console.error("Failed to save item:", error)
     errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
@@ -160,7 +157,12 @@ async function submitForm(): Promise<void> {
   }
 
   // Replace the form's history entry, so going back from the new item doesn't reopen the form
-  router.replace({ name: "libraryItem", params: { id: newId }, state: { entryTab: 1 } })
+  // Open the Events tab when an event was created, otherwise the item's details
+  router.replace({
+    name: "libraryItem",
+    params: { id: newId },
+    state: { entryTab: includeEvent.value ? 1 : 0 },
+  })
 }
 
 const kinds = [
@@ -196,13 +198,31 @@ const kinds = [
               <TextInput name="name" label="Nimi" v-model="gameModel.title" icon="Game" />
               <TextInput name="author" label="Tekijä" :required="true" v-model="gameModel.creator" icon="Author" />
             </div>
-            <DatePicker v-model="completedAt" label="Päiväys" icon="Calendar" />
-            <ManagementList
-              :key="kind"
-              title="Haasteet"
-              :items="selectedChallengeItems"
-              :allOptions="allChallengeOptions"
-              @stateChanged="onChallengeStateChanged"
+            <div v-if="includeEvent" class="flex flex-col gap-3 rounded border border-brand-orange bg-white p-3">
+              <div class="flex flex-row items-center justify-between gap-2">
+                <h2 class="font-medium">Tapahtuma</h2>
+                <BrandedButton
+                  icon="Delete"
+                  :onClick="() => (includeEvent = false)"
+                  variant="secondary"
+                  :is-pill="true"
+                  aria-label="Poista tapahtuma"
+                />
+              </div>
+              <EventFields
+                v-model:completed-at="completedAt"
+                v-model:activated-challenge-ids="activatedChallengeIds"
+                :challenges="challengeOptions"
+              />
+            </div>
+            <BrandedButton
+              v-else
+              text="Lisää tapahtuma"
+              :onClick="addEvent"
+              icon="Plus"
+              variant="secondary"
+              :is-pill="true"
+              class="w-fit"
             />
             <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
               {{ errorMessage }}

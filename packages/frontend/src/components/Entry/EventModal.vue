@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import Modal from '@/components/Basics/PopupModal.vue'
 import BrandedButton from '@/components/Basics/BrandedButton.vue'
-import DatePicker from '@/components/Basics/DatePicker.vue'
+import EventFields from '@/components/Entry/EventFields.vue'
 import { useEventApi } from '@/api/eventApiClient'
 import type { LibraryItem } from '@/models/LibraryItem'
 import type { Challenge } from '@/models/challenge'
@@ -51,12 +51,6 @@ const challengeOptions = computed(() => {
   return challenges.filter((challenge) => challenge.targetMedia === item.kind)
 })
 
-function toggleChallenge(challengeId: string, checked: boolean) {
-  activatedChallengeIds.value = checked
-    ? [...activatedChallengeIds.value, challengeId]
-    : activatedChallengeIds.value.filter((id) => id !== challengeId)
-}
-
 const isSubmitting = ref(false)
 async function submitModal(): Promise<void> {
   isSubmitting.value = true
@@ -84,27 +78,11 @@ function closeModal(): void {
 <template>
   <Modal :show-modal="isModalOpen">
     <div class="flex flex-col gap-4 p-4">
-      <DatePicker v-model="completedAt" label="Päiväys" icon="Calendar" />
-
-      <fieldset class="flex flex-col gap-2">
-        <legend class="mb-2">Haasteet</legend>
-        <label
-          v-for="challenge in challengeOptions"
-          :key="challenge.id"
-          class="flex flex-row items-center gap-2 cursor-pointer"
-        >
-          <input
-            type="checkbox"
-            class="w-4 h-4 accent-brand-primary cursor-pointer"
-            :checked="activatedChallengeIds.includes(challenge.id)"
-            @change="toggleChallenge(challenge.id, ($event.target as HTMLInputElement).checked)"
-          />
-          <span>{{ challenge.name }}</span>
-        </label>
-        <span v-if="challengeOptions.length === 0" class="text-xs text-gray-400">
-          Ei haasteita
-        </span>
-      </fieldset>
+      <EventFields
+        v-model:completed-at="completedAt"
+        v-model:activated-challenge-ids="activatedChallengeIds"
+        :challenges="challengeOptions"
+      />
 
       <div class="flex flex-row justify-between py-2 gap-3">
         <BrandedButton :onClick="closeModal" text="Peru" icon="Cross" :is-pill="true" variant="secondary" />
