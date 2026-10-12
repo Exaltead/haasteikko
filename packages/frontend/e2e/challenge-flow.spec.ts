@@ -74,8 +74,20 @@ test("User can create a challenge, add a book, answer a question, and verify res
   await answerSaved
   await expect(authenticatedPage.getByText("1 / 1 vastattu")).toBeVisible()
 
-  // Back on the entry page the event is still expanded and its card reflects the answer
+  // Back on the entry page's Events tab, the card reflects the answer
   await authenticatedPage.getByTestId("back-button").click()
+  await expect(challengeCard).toContainText("1 / 1 vastattu")
+
+  // Editing the event: unlinking the challenge hides its card, relinking brings the answers back
+  const editEvent = authenticatedPage.getByRole("button", { name: "Muokkaa tapahtumaa" })
+  await editEvent.click()
+  await authenticatedPage.getByRole("checkbox", { name: challengeName }).uncheck()
+  await authenticatedPage.getByRole("button", { name: "Tallenna" }).click()
+  await expect(challengeCard).toHaveCount(0)
+
+  await editEvent.click()
+  await authenticatedPage.getByRole("checkbox", { name: challengeName }).check()
+  await authenticatedPage.getByRole("button", { name: "Tallenna" }).click()
   await expect(challengeCard).toContainText("1 / 1 vastattu")
 
   // A second event linking the same challenge shares the item's single answer set

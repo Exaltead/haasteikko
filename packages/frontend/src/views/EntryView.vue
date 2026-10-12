@@ -5,7 +5,7 @@ import { useEventApi } from '@/api/eventApiClient';
 import { useAnswerApi } from '@/api/answerApiClient';
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
 import EntryEvent from '@/components/Entry/EntryEvent.vue';
-import NewEventModal from '@/components/Entry/NewEventModal.vue';
+import EventModal from '@/components/Entry/EventModal.vue';
 import BaseIcon from '@/components/Icons/BaseIcon.vue';
 import BrandedButton from '@/components/Basics/BrandedButton.vue';
 import TabNavigation from '@/components/Basics/TabNavigation.vue';
@@ -38,14 +38,14 @@ const item = ref<LibraryItem | undefined>(undefined)
 const events = ref<Event[]>([])
 const answers = ref<Answer[]>([])
 
-// Set by NewEntryView's redirect right after creating an item + its auto-linked event, so the
-// Events tab can open pre-expanded on that event without any extra clicks. One-time navigation
-// state only - not meant to survive a refresh or be shareable. Also updated after manually
-// creating an event via NewEventModal, so that event opens pre-expanded too, and whenever an event
-// is expanded, so navigating back from a challenge answer page reopens it.
-const expandEventId = ref<string | undefined>(
-  (history.state as { expandEventId?: string } | null)?.expandEventId,
-)
+// Selected tab, kept in this history entry's state: NewEntryView's redirect opens the Events tab,
+// and navigating back from a challenge answer page returns to whichever tab was open. One-time
+// navigation state only - not meant to survive a refresh or be shareable.
+const initialTabIndex = (history.state as { entryTab?: number } | null)?.entryTab ?? 0
+
+function onTabChanged(index: number) {
+  history.replaceState({ ...history.state, entryTab: index }, "")
+}
 
 async function getChallenges() {
   challenges.value = await challengeApiClient.fetchChallenges()
@@ -83,22 +83,17 @@ function setEditingMode(state: boolean) {
   }
 }
 
-const initialTabIndex = expandEventId.value ? 1 : 0
-
 const showEventModal = ref(false)
-async function onEventCreated(eventId: string) {
-  showEventModal.value = false
-  expandEventId.value = eventId
-  await getEvents()
+const editingEvent = ref<Event | undefined>(undefined)
+
+function openEventModal(event?: Event) {
+  editingEvent.value = event
+  showEventModal.value = true
 }
 
-function onEventExpandedChanged(eventId: string, expanded: boolean) {
-  if (expanded) {
-    expandEventId.value = eventId
-  } else if (expandEventId.value === eventId) {
-    expandEventId.value = undefined
-  }
-  history.replaceState({ ...history.state, expandEventId: expandEventId.value }, "")
+async function onEventSaved() {
+  showEventModal.value = false
+  await getEvents()
 }
 
 const sortedEvents = computed(() => {
@@ -129,7 +124,7 @@ const sortedEvents = computed(() => {
           </div>
 
           <TabNavigation tab1Label="Tiedot" :tab2Label="`Tapahtumat (${sortedEvents.length})`"
-            :default-index="initialTabIndex">
+            :default-index="initialTabIndex" @change="onTabChanged">
             <template #tab1>
               <div class="w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
                 <EntryBasics @objectDeleted="toLibrary" @object-edited="getItem" :item="item"
@@ -147,13 +142,11 @@ const sortedEvents = computed(() => {
                   :item="item"
                   :challenges="challenges"
                   :answers="answers"
-                  :initially-expanded="event.id === expandEventId"
-                  @event-updated="getEvents"
-                  @expanded-changed="(expanded: boolean) => onEventExpandedChanged(event.id, expanded)"
+                  @edit="openEventModal(event)"
                 />
                 <BrandedButton
                   text="Lisää uusi tapahtuma"
-                  :onClick="() => (showEventModal = true)"
+                  :onClick="() => openEventModal()"
                   icon="Plus"
                   variant="primary"
                 />
@@ -162,11 +155,12 @@ const sortedEvents = computed(() => {
           </TabNavigation>
         </div>
       </ResponsiveCardWrapper>
-      <NewEventModal
+      <EventModal
         :is-modal-open="showEventModal"
         :item="item"
         :challenges="challenges"
-        @submit-complete="onEventCreated"
+        :event="editingEvent"
+        @submit-complete="onEventSaved"
         @close="showEventModal = false"
       />
     </div>

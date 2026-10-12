@@ -144,7 +144,7 @@ async function submitForm(): Promise<void> {
     return
   }
 
-  const newEventId = await eventApi.addEvent({
+  await eventApi.addEvent({
     itemId: newId,
     completedAt: completedAt.value.toISOString(),
     activatedChallengeIds: activatedChallengeIds.value,
@@ -152,7 +152,7 @@ async function submitForm(): Promise<void> {
 
   isSubmitting.value = false
   // Replace the form's history entry, so going back from the new item doesn't reopen the form
-  router.replace({ name: "libraryItem", params: { id: newId }, state: { expandEventId: newEventId } })
+  router.replace({ name: "libraryItem", params: { id: newId }, state: { entryTab: 1 } })
 }
 
 const kinds = [
