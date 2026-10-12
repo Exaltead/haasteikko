@@ -5,24 +5,31 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 env:
   API_URL: "https://haasteikko.eu/api"
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     environment: staging
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22.x"
+          cache: npm
 
       - name: Install dependencies
         run: |
@@ -36,33 +43,24 @@ jobs:
           npm run build --workspace=frontend
 
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
           toolchain: stable
-          override: true
+          targets: x86_64-unknown-linux-gnu
 
       - name: Cache Cargo registry and index
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/packages/backend/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
-
-      - name: Cache Rust target directory
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/packages/backend/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
 
       - name: Build rust backend
         run: |
           cd packages/backend
-          rustup target add x86_64-unknown-linux-gnu
           # Clean target directory to avoid cache issues
           cargo clean
           cargo build --release --target x86_64-unknown-linux-gnu
@@ -98,11 +96,14 @@ jobs:
           cp -r packages/backend/migrations deployment_artifacts/backend/
 
       - name: Create SSH key
+        env:
+          VM_SSH_SECRET: ${{ secrets.VM_SSH_SECRET }}
+          VM_HOST: ${{ secrets.VM_HOST }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_SECRET }}" > ~/.ssh/id_ed25519
+          echo "$VM_SSH_SECRET" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts || true
+          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Verify deployment artifacts
         run: |
@@ -115,8 +116,11 @@ jobs:
           fi
 
       - name: Deploy
+        env:
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_HOST: ${{ secrets.VM_HOST }}
         run: |
-          rsync -r deployment_artifacts/dist ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home
-          rsync -r deployment_artifacts/backend/migrations ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/haasteikko
-          rsync deployment_artifacts/backend/haasteikko-backend ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/opt/haasteikko
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "sudo systemctl restart haasteikko-backend"
+          rsync -r deployment_artifacts/dist "$VM_USER@$VM_HOST:/home"
+          rsync -r deployment_artifacts/backend/migrations "$VM_USER@$VM_HOST:/opt/haasteikko"
+          rsync deployment_artifacts/backend/haasteikko-backend "$VM_USER@$VM_HOST:/opt/haasteikko"
+          ssh -i ~/.ssh/id_ed25519 "$VM_USER@$VM_HOST" "sudo systemctl restart haasteikko-backend"
