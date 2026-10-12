@@ -138,30 +138,39 @@ async function submitForm(): Promise<void> {
     newId = await libraryApi.addLibraryItem(item)
     if (newId === undefined) {
       errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
+      isSubmitting.value = false
       return
     }
+  } catch (error) {
+    console.error("Failed to save item:", error)
+    errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
+    isSubmitting.value = false
+    return
+  }
 
-    if (includeEvent.value) {
+  // The item is saved now. If its event fails, don't stay on the form: retrying from here would
+  // add the item a second time. The item's Events tab shows the error instead.
+  let eventSaveFailed = false
+  if (includeEvent.value) {
+    try {
       await eventApi.addEvent({
         itemId: newId,
         completedAt: completedAt.value.toISOString(),
         activatedChallengeIds: activatedChallengeIds.value,
       })
+    } catch (error) {
+      console.error("Failed to save event:", error)
+      eventSaveFailed = true
     }
-  } catch (error) {
-    console.error("Failed to save item:", error)
-    errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
-    return
-  } finally {
-    isSubmitting.value = false
   }
+  isSubmitting.value = false
 
   // Replace the form's history entry, so going back from the new item doesn't reopen the form
-  // Open the Events tab when an event was created, otherwise the item's details
+  // Open the Events tab when an event was added (or failed), otherwise the item's details
   router.replace({
     name: "libraryItem",
     params: { id: newId },
-    state: { entryTab: includeEvent.value ? 1 : 0 },
+    state: { entryTab: includeEvent.value ? 1 : 0, eventSaveFailed },
   })
 }
 

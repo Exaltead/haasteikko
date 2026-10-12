@@ -47,6 +47,16 @@ function onTabChanged(index: number) {
   history.replaceState({ ...history.state, entryTab: index }, "")
 }
 
+// Set by NewEntryView when the item was saved but its first event wasn't
+const eventSaveFailed = ref(
+  (history.state as { eventSaveFailed?: boolean } | null)?.eventSaveFailed ?? false,
+)
+
+function dismissEventSaveError() {
+  eventSaveFailed.value = false
+  history.replaceState({ ...history.state, eventSaveFailed: false }, "")
+}
+
 async function getChallenges() {
   challenges.value = await challengeApiClient.fetchChallenges()
 }
@@ -93,6 +103,7 @@ function openEventModal(event?: Event) {
 
 async function onEventSaved() {
   showEventModal.value = false
+  dismissEventSaveError()
   await getEvents()
 }
 
@@ -134,6 +145,12 @@ const sortedEvents = computed(() => {
 
             <template #tab2>
               <div class="flex flex-col gap-3 w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
+                <div v-if="eventSaveFailed"
+                  class="flex flex-row items-start justify-between gap-2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded"
+                  data-testid="event-save-error">
+                  <span>Kohde tallennettiin, mutta tapahtuman tallentaminen epäonnistui. Lisää tapahtuma uudelleen.</span>
+                  <button type="button" class="font-bold" aria-label="Sulje" @click="dismissEventSaveError">×</button>
+                </div>
                 <div class="flex flex-row justify-start">
                   <BrandedButton
                     text="Lisää uusi"

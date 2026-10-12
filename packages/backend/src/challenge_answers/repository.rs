@@ -2,7 +2,7 @@ use crate::{
     challenge_answers::domain::Answer,
     database::{Database, Repository, query_in_transation},
 };
-use rusqlite::{OptionalExtension, Result};
+use rusqlite::{OptionalExtension, Result, TransactionBehavior};
 
 use super::domain::AnswerFilter;
 
@@ -13,6 +13,37 @@ pub struct ChallengeAnswerRepository {
 impl ChallengeAnswerRepository {
     pub fn new(db: Database) -> Self {
         ChallengeAnswerRepository { db }
+    }
+
+    /// Saves the answers in one transaction, either all or none. An answer to a question the item
+    /// already has an answer for updates that answer (keeping its id), so concurrent saves can't
+    /// create a second answer for the same question. The write lock is taken up front
+    /// (IMMEDIATE) so concurrent saves queue up instead of failing on a lock upgrade.
+    pub fn upsert_for_item(&mut self, answers: &[Answer]) -> Result<()> {
+        let tx = self
+            .conn()
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+
+        for answer in answers {
+            tx.execute::<&[&dyn rusqlite::ToSql]>(
+                "INSERT INTO answer (id, question_id, challenge_id, user_id, answered, answer, kind, item_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (user_id, item_id, question_id) DO UPDATE
+                    SET answered = excluded.answered, answer = excluded.answer, kind = excluded.kind",
+                &[
+                    &answer.id,
+                    &answer.question_id,
+                    &answer.challenge_id,
+                    &answer.user_id,
+                    &(if answer.answered { 1i64 } else { 0i64 }),
+                    &answer.answer,
+                    &answer.kind,
+                    &answer.item_id,
+                ],
+            )?;
+        }
+
+        tx.commit()
     }
 }
 
@@ -145,7 +176,8 @@ fn to_sql_params<'a>(filter: &'a AnswerFilter) -> (String, Vec<&'a dyn rusqlite:
         conditions.push(
             "EXISTS (SELECT 1 FROM event e
                 JOIN event_challenge ec ON ec.event_id = e.id
-                WHERE e.item_id = answer.item_id AND ec.challenge_id = answer.challenge_id)",
+                WHERE e.user_id = answer.user_id AND e.item_id = answer.item_id
+                    AND ec.challenge_id = answer.challenge_id)",
         );
     }
 

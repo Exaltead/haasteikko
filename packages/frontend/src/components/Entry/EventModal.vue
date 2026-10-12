@@ -25,8 +25,10 @@ const emit = defineEmits<{
 
 const completedAt = ref<Date>(new Date())
 const activatedChallengeIds = ref<string[]>([])
+const errorMessage = ref<string | null>(null)
 
 function resetState() {
+  errorMessage.value = null
   if (event) {
     completedAt.value = new Date(event.completedAt)
     activatedChallengeIds.value = [...event.activatedChallengeIds]
@@ -54,20 +56,27 @@ const challengeOptions = computed(() => {
 const isSubmitting = ref(false)
 async function submitModal(): Promise<void> {
   isSubmitting.value = true
+  errorMessage.value = null
   const fields = {
     itemId: item.id,
     completedAt: completedAt.value.toISOString(),
     activatedChallengeIds: activatedChallengeIds.value,
   }
-  let eventId: string
-  if (event) {
-    await eventApi.updateEvent({ id: event.id, ...fields })
-    eventId = event.id
-  } else {
-    eventId = await eventApi.addEvent(fields)
+  try {
+    let eventId: string
+    if (event) {
+      await eventApi.updateEvent({ id: event.id, ...fields })
+      eventId = event.id
+    } else {
+      eventId = await eventApi.addEvent(fields)
+    }
+    emit("submitComplete", eventId)
+  } catch (error) {
+    console.error("Failed to save event:", error)
+    errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
+  } finally {
+    isSubmitting.value = false
   }
-  isSubmitting.value = false
-  emit("submitComplete", eventId)
 }
 
 function closeModal(): void {
@@ -78,6 +87,9 @@ function closeModal(): void {
 <template>
   <Modal :show-modal="isModalOpen">
     <div class="flex flex-col gap-4 p-4">
+      <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
+        {{ errorMessage }}
+      </div>
       <EventFields
         v-model:completed-at="completedAt"
         v-model:activated-challenge-ids="activatedChallengeIds"

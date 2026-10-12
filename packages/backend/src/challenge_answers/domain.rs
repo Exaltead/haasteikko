@@ -6,7 +6,6 @@ use crate::{
     library::LibraryRepository,
 };
 use rusqlite::Result;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct AnswerFilter<'a> {
@@ -85,38 +84,18 @@ pub fn upsert_answers(
         return Err(rusqlite::Error::QueryReturnedNoRows); // Item not found
     }
 
+    let answers: Vec<Answer> = answer_set
+        .iter()
+        .map(|answer| Answer {
+            answered: answer.is_answered(),
+            ..answer.clone()
+        })
+        .collect();
+    repo.upsert_for_item(&answers)?;
+
     let filter = AnswerFilter::new(&user.id);
     let filter = filter.with_item_id(item_id);
     let filter = filter.with_challenge_id(challenge_id);
-
-    // Match existing answers by question, so a client holding stale ids can't create a second
-    // answer for the same question of the item.
-    let current_ids_by_question: HashMap<String, String> = repo
-        .search(filter.clone())?
-        .into_iter()
-        .map(|a| (a.question_id, a.id))
-        .collect();
-
-    for answer in answer_set {
-        match current_ids_by_question.get(&answer.question_id) {
-            Some(existing_id) => {
-                let answer = Answer {
-                    id: existing_id.clone(),
-                    answered: answer.is_answered(),
-                    ..answer.clone()
-                };
-                repo.update(existing_id, &answer)?;
-            }
-            None => {
-                let answer = Answer {
-                    answered: answer.is_answered(),
-                    ..answer.clone()
-                };
-                repo.create(&answer)?;
-            }
-        }
-    }
-
     repo.search(filter)
 }
 
@@ -229,5 +208,61 @@ mod tests {
 
         let linked = get_challenge_answers(&state.database_path, linked_only).unwrap();
         assert_eq!(linked.len(), 1);
+    }
+
+    #[test]
+    fn another_users_event_on_the_item_does_not_link_its_answers() {
+        let (_dir, state) = setup();
+        let user = User::new(USER.to_string());
+        upsert_answers(&user, &state, ITEM, CHALLENGE, &[answer("a", "yes")]).unwrap();
+
+        let db = Database::new(&state.database_path).unwrap();
+        db.conn
+            .execute_batch(&format!(
+                "INSERT INTO event (id, user_id, item_id, completed_at)
+                    VALUES ('foreign-event', 'user-2', '{ITEM}', '2026-01-01');
+                 INSERT INTO event_challenge (event_id, challenge_id)
+                    VALUES ('foreign-event', '{CHALLENGE}');"
+            ))
+            .unwrap();
+
+        let base = AnswerFilter::new(USER);
+        let linked_only = AnswerFilter {
+            only_linked: true,
+            ..base.with_challenge_id(CHALLENGE)
+        };
+        let linked = get_challenge_answers(&state.database_path, linked_only).unwrap();
+        assert!(linked.is_empty());
+    }
+
+    #[test]
+    fn concurrent_upserts_for_a_fresh_item_all_succeed() {
+        use std::sync::{Arc, Barrier};
+
+        const THREADS: usize = 8;
+        let (_dir, state) = setup();
+        let state = Arc::new(state);
+        let barrier = Arc::new(Barrier::new(THREADS));
+
+        let handles: Vec<_> = (0..THREADS)
+            .map(|i| {
+                let (state, barrier) = (state.clone(), barrier.clone());
+                std::thread::spawn(move || {
+                    let user = User::new(USER.to_string());
+                    // Every client generated its own id for the not yet saved answer
+                    let answer = answer(&format!("answer-{i}"), &format!("value-{i}"));
+                    barrier.wait();
+                    upsert_answers(&user, &state, ITEM, CHALLENGE, &[answer])
+                        .map_err(|e| e.to_string())
+                })
+            })
+            .collect();
+        for handle in handles {
+            handle.join().unwrap().expect("concurrent upsert failed");
+        }
+
+        let base = AnswerFilter::new(USER);
+        let answers = get_challenge_answers(&state.database_path, base.with_item_id(ITEM)).unwrap();
+        assert_eq!(answers.len(), 1);
     }
 }
