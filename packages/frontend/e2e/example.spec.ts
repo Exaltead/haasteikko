@@ -5,8 +5,8 @@ import { test, expect } from "./test-auth"
  *
  * Prerequisites:
  * - Mock OIDC server running (npm run mock-oidc)
- * - Backend running with JWKS_URL=http://localhost:9000/.well-known/jwks.json
- * - Frontend dev server running with VITE_AUTH_AUTHORITY=http://localhost:9000
+ * - Backend running with JWKS_URL=http://localhost:9001/.well-known/jwks.json
+ * - Frontend dev server running with VITE_AUTH_AUTHORITY=http://localhost:9001
  */
 
 test("User can log in and add a book to an empty library", async ({ authenticatedPage }) => {
@@ -40,4 +40,32 @@ test("User can log in and add a book to an empty library", async ({ authenticate
 
   await expect(authenticatedPage).toHaveURL(/library\/[a-f0-9-]+/)
   await expect(authenticatedPage.getByText(bookName)).toBeVisible()
+})
+
+test("User can add a book without an event", async ({ authenticatedPage }) => {
+  await authenticatedPage.goto("/")
+  await authenticatedPage.getByRole("button", { name: "Kirjaudu sisään" }).click()
+  await authenticatedPage.waitForURL("/home")
+
+  await authenticatedPage.goto("/library/new")
+  const bookName = `Unread Book ${Date.now()}`
+  await authenticatedPage.getByLabel("Nimi").fill(bookName)
+  await authenticatedPage.getByLabel("Kirjailija").fill("Test Author")
+
+  // The event card is there by default; removing it can be undone
+  const removeEvent = authenticatedPage.getByRole("button", { name: "Poista tapahtuma" })
+  const eventCard = authenticatedPage.getByRole("group", { name: "Päiväys" })
+  await expect(eventCard).toBeVisible()
+  await removeEvent.click()
+  await expect(eventCard).toHaveCount(0)
+  await authenticatedPage.getByRole("button", { name: "Lisää tapahtuma" }).click()
+  await expect(eventCard).toBeVisible()
+  await removeEvent.click()
+
+  await authenticatedPage.getByRole("button", { name: "Tallenna" }).click()
+
+  // Without an event the item opens on its details, and its events list is empty
+  await expect(authenticatedPage).toHaveURL(/library\/[a-f0-9-]+$/)
+  await expect(authenticatedPage.getByText(`Nimi: ${bookName}`)).toBeVisible()
+  await expect(authenticatedPage.getByRole("tab", { name: "Tapahtumat (0)" })).toBeVisible()
 })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import IconedText from '@/components/Basics/IconedText.vue';
-import type { LibraryItem } from '@/models/LibraryItem';
+import type { LibraryItemWithCompletion } from '@/composables/useEventSummary';
 import BaseIcon from '../Icons/BaseIcon.vue';
 import { ref } from 'vue';
 import { useLibraryApi } from '@/api/libraryApiClient';
@@ -12,7 +12,7 @@ const formatDate = (dateString: string): string => {
 
 const libraryApi = useLibraryApi()
 const props = defineProps<{
-  item: LibraryItem
+  item: LibraryItemWithCompletion
   orderingNumber: number
 }>()
 
@@ -63,7 +63,7 @@ async function updateItemFavorite(): Promise<void> {
       </div>
     </RouterLink>
     <div class="w-full text-right px-1 -mt-2">
-      <span class="text-xs text-gray-400">{{ formatDate(item.completedAt) }}</span>
+      <span class="text-xs text-gray-400">{{ item.lastCompletedAt ? formatDate(item.lastCompletedAt) : "" }}</span>
     </div>
   </div>
 

@@ -32,9 +32,11 @@ PLAYWRIGHT_HTML_OPEN=never npx playwright test   # Same, suppressing the HTML re
 npx playwright test e2e/challenge-flow.spec.ts   # Run a single E2E spec
 ```
 `playwright.config.ts` auto-starts the full stack needed for E2E tests via its `webServer`
-entries: the mock OIDC server (`npm run mock-oidc`, port 9000), the backend against a scratch
-`test-e2e.sqlite` (port 3000), and the frontend dev server in `test` mode (port 5173). No manual
-setup is required beyond having `cargo` on PATH — just run the Playwright command.
+entries: the mock OIDC server (`npm run mock-oidc`, port 9001), the backend against a scratch
+`test-e2e.sqlite` (port 3001), and the frontend dev server in `test` mode (port 5183). These are
+deliberately distinct from the normal dev ports (5173/3000/9000 via `npm run start:all`) so the
+E2E suite can run alongside a live dev session without port collisions. No manual setup is
+required beyond having `cargo` on PATH — just run the Playwright command.
 
 Component/story tests run through Vitest's browser mode via `@storybook/addon-vitest`
 (configured in `vite.config.ts`); there is no separate `test` script yet — run with

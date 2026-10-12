@@ -34,9 +34,7 @@ pub struct LibraryItem {
     pub title: String,
     pub author: String,
     pub added_at: String,
-    pub completed_at: String,
     pub favorite: bool,
-    pub activated_challenge_ids: Vec<String>,
     pub translator: Option<String>,
 }
 
@@ -46,9 +44,7 @@ pub struct NewLibraryItem {
     pub kind: String,
     pub title: String,
     pub author: String,
-    pub completed_at: String,
     pub favorite: bool,
-    pub activated_challenge_ids: Vec<String>,
     pub translator: Option<String>,
 }
 

@@ -2,6 +2,7 @@
 import { useAnswerApi } from '@/api/answerApiClient';
 import { useChallengeApi } from '@/api/challengeApiClient';
 import { useLibraryApi } from '@/api/libraryApiClient';
+import { useEventApi } from '@/api/eventApiClient';
 
 import { useSolutionsApi } from '@/api/solutionsApiClient';
 import BrandedButton from '@/components/Basics/BrandedButton.vue';
@@ -13,6 +14,8 @@ import EmptyState from '@/components/Basics/EmptyState.vue';
 import QuestionSolutionItem from '@/components/Challenge/QuestionSolutionItem.vue';
 import type { Answer, Question, Solution } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
+import type { Event } from '@/models/Event';
+import { withLastCompletedAt } from '@/composables/useEventSummary';
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -21,15 +24,24 @@ const libraryApi = useLibraryApi()
 const challengeApiClient = useChallengeApi()
 const answerApiClient = useAnswerApi()
 const solutionsApiClient = useSolutionsApi()
+const eventApiClient = useEventApi()
 
 
 const allItems = ref<LibraryItem[]>([])
+const allEvents = ref<Event[]>([])
 const questions = ref<Question[]>([])
 const allAnswers = ref<Answer[]>([])
 const challengeName = ref("")
 const challengeMediaType = ref<"Book" | "Game">("Book")
 
 const solution = ref<Solution[]>([])
+
+// Boolean questions pick a single item; TextInput questions always pick a list of items (one per
+// cluster slot, even when the cluster size is 1), which is what QuestionSolutionItem renders.
+function solutionKindFor(question: Question): Solution["kind"] {
+  return question.kind === "TextInput" ? "MultiPartSolution" : "SinglePartSolution"
+}
+
 async function getSolution(): Promise<Solution[]> {
   const challengeId = route.params.id as string
   const serverSolutions = await solutionsApiClient.searchSolutions({ challengeId: challengeId })
@@ -40,7 +52,7 @@ async function getSolution(): Promise<Solution[]> {
     const existingSolution = serverSolutions.find(t => t.questionId === question.id)
     if (existingSolution === undefined) {
       result.push({
-        kind: question.questionClusterSize > 1 ? "MultiPartSolution" : "SinglePartSolution",
+        kind: solutionKindFor(question),
         questionId: question.id,
         singleAnswerItemId: "",
         multipleAnswerItemIds: [...Array(question.questionClusterSize).keys()].map(() => "")
@@ -49,18 +61,19 @@ async function getSolution(): Promise<Solution[]> {
       if (question.kind === "TextInput" && existingSolution.multipleAnswerItemIds.length !== question.questionClusterSize) {
         existingSolution.multipleAnswerItemIds = [...Array(question.questionClusterSize).keys()].map(() => "")
       }
-      result.push(existingSolution)
+      result.push({ ...existingSolution, kind: solutionKindFor(question) })
     }
   }
   return result
 }
 
 async function loadItems(): Promise<void> {
-  const items = await libraryApi.fetchLibraryItems()
-  allItems.value = items.filter((item) => {
-    const challengeId = route.params.id as string
-    return item.activatedChallengeIds.includes(challengeId)
-  })
+  const [items, events] = await Promise.all([
+    libraryApi.fetchLibraryItems(),
+    eventApiClient.fetchEvents(),
+  ])
+  allItems.value = items
+  allEvents.value = events
 }
 
 const loading = ref(false)
@@ -108,6 +121,10 @@ watch(solution, async (newValue) => {
   if (loading.value) return
 
   const newSolutionStr = JSON.stringify(newValue)
+  // The watcher also fires once for the assignment in loadData, after `loading` has been reset.
+  // Skip that no-op save: the backend replaces the whole set, so a late one could overwrite a
+  // choice the user made right after the page opened.
+  if (newSolutionStr === previousSolution) return
 
   if (previousSolution) {
     const oldSolution: Solution[] = JSON.parse(previousSolution)
@@ -171,9 +188,9 @@ function getQuestionAnswers(question: Question): Answer[] {
     const trueOptions = options.filter(t => uniqueAnswers.includes(t.answer))
 
     if (questionSolution.multipleAnswerItemIds[0] !== "") {
+      const targetItemId = questionSolution.multipleAnswerItemIds[0]
       const answered = allAnswers.value
-        .find(t => t.itemId === questionSolution.multipleAnswerItemIds[0]
-          && t.questionId === question.id)
+        .find(t => t.itemId === targetItemId && t.questionId === question.id)
 
       if (answered === undefined) {
         return []
@@ -258,15 +275,17 @@ const questionToAnswersMap = computed(() => {
 // Filter library items for the current challenge
 const challengeLibraryItems = computed(() => {
   const challengeId = route.params.id as string
-  const filteredItems = allItems.value.filter(item =>
-    item.activatedChallengeIds.includes(challengeId)
+  const matchingItemIds = new Set(
+    allEvents.value.filter(e => e.activatedChallengeIds.includes(challengeId)).map(e => e.itemId),
   )
+  const filteredItems = allItems.value.filter(item => matchingItemIds.has(item.id))
+  const withCompletion = withLastCompletedAt(filteredItems, allEvents.value)
 
   // Apply same sorting as EntryListing.vue for stable ordering
-  return filteredItems.sort((a, b) => {
-    // Primary: completedAt descending (newest first)
-    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
-    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
+  return withCompletion.sort((a, b) => {
+    // Primary: lastCompletedAt descending (newest first)
+    const dateA = a.lastCompletedAt ? new Date(a.lastCompletedAt).getTime() : 0
+    const dateB = b.lastCompletedAt ? new Date(b.lastCompletedAt).getTime() : 0
     if (dateA !== dateB) return dateB - dateA
 
     // Secondary: addedAt descending (newer additions first)

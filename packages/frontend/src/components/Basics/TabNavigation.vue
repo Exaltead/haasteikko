@@ -1,9 +1,16 @@
 <script lang="ts" setup>
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
 
-defineProps<{
+withDefaults(defineProps<{
   tab1Label: string
   tab2Label: string
+  defaultIndex?: number
+}>(), {
+  defaultIndex: 0,
+})
+
+const emit = defineEmits<{
+  (e: "change", index: number): void
 }>()
 
 function makeTabStyle(selected: boolean) {
@@ -14,7 +21,8 @@ function makeTabStyle(selected: boolean) {
 </script>
 
 <template>
-  <TabGroup as="div" class="w-full">
+  <TabGroup as="div" class="w-full" :default-index="defaultIndex"
+    @change="(index: number) => emit('change', index)">
     <TabList as="div"
       class="bg-brand-warm-white border-b border-brand-orange/20 h-[50px] md:h-[72px] flex flex-row items-center justify-between gap-4 md:gap-8">
         <!-- First Tab -->

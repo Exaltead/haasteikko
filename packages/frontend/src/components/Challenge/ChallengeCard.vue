@@ -6,6 +6,7 @@ import ProgressBar from '@/components/Basics/ProgressBar.vue'
 defineProps<{
   challenge: Challenge
   completedCount: number
+  solvedCount: number
   totalCount: number
   attachedItemCount: number
 }>()
@@ -25,16 +26,25 @@ defineProps<{
 
       <div class="flex flex-row items-center gap-3">
         <div class="flex-1">
-          <ProgressBar :progress="totalCount > 0 ? (completedCount / totalCount) * 100 : 0" />
+          <ProgressBar
+            :progress="totalCount > 0 ? (completedCount / totalCount) * 100 : 0"
+            :solved-progress="totalCount > 0 ? (solvedCount / totalCount) * 100 : 0"
+          />
         </div>
         <span class="text-sm font-medium whitespace-nowrap">
           {{ completedCount }} / {{ totalCount }}
         </span>
       </div>
 
-      <div class="flex flex-row items-center gap-2 text-sm text-gray-600">
-        <BaseIcon :name="challenge.targetMedia" class="h-4 w-4 text-brand-orange" />
-        <span>{{ attachedItemCount }} {{ challenge.targetMedia === 'Book' ? 'kirjaa' : 'peliä' }}</span>
+      <div class="flex flex-row items-center justify-between gap-2 text-sm text-gray-600">
+        <div class="flex flex-row items-center gap-2">
+          <BaseIcon :name="challenge.targetMedia" class="h-4 w-4 text-brand-orange" />
+          <span>{{ attachedItemCount }} {{ challenge.targetMedia === 'Book' ? 'kirjaa' : 'peliä' }}</span>
+        </div>
+        <div class="flex flex-row items-center gap-1">
+          <span class="inline-block h-2 w-2 rounded-full bg-brand-green" />
+          <span>{{ solvedCount }} ratkaistu</span>
+        </div>
       </div>
     </div>
   </RouterLink>

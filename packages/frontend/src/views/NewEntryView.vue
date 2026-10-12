@@ -1,0 +1,249 @@
+<script setup lang="ts">
+import BrandedButton from '@/components/Basics/BrandedButton.vue';
+import ResponsiveCardWrapper from '@/components/Basics/ResponsiveCardWrapper.vue';
+import { computed, onMounted, ref, watch } from 'vue'
+import TextInput from "@/components/Basics/TextInput.vue"
+import type { Book, Game, LibraryItem } from '@/models/LibraryItem';
+import type { Challenge } from '@/models/challenge';
+import { useLibraryApi } from '@/api/libraryApiClient';
+import { useEventApi } from '@/api/eventApiClient';
+import { useChallengeApi } from '@/api/challengeApiClient';
+import BrandedSelect from '@/components/Basics/BrandedSelect.vue';
+import EventFields from '@/components/Entry/EventFields.vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter()
+const libraryApi = useLibraryApi()
+const eventApi = useEventApi()
+const challengeApi = useChallengeApi()
+
+type NewBook = {
+  name: string,
+  author: string,
+  translator: string
+}
+
+type NewGame = {
+  title: string,
+  creator: string
+}
+
+const newBookBase: NewBook = {
+  name: "",
+  author: "",
+  translator: ""
+}
+
+const newGameBase: NewGame = {
+  title: "",
+  creator: ""
+}
+
+type ValidKinds = "Book" | "Game"
+
+const bookModel = ref<NewBook>({ ...newBookBase })
+const gameModel = ref<NewGame>({ ...newGameBase })
+const kind = ref<ValidKinds>("Book")
+const completedAt = ref<Date>(new Date())
+
+const challenges = ref<Challenge[]>([])
+const activatedChallengeIds = ref<string[]>([])
+
+function defaultActivatedChallengeIds(): string[] {
+  return challenges.value
+    .filter((challenge) => challenge.status === "active" && challenge.targetMedia === kind.value)
+    .map((challenge) => challenge.id)
+}
+
+onMounted(async () => {
+  challenges.value = await challengeApi.fetchChallenges()
+  activatedChallengeIds.value = defaultActivatedChallengeIds()
+})
+
+watch(kind, () => {
+  activatedChallengeIds.value = defaultActivatedChallengeIds()
+})
+
+const challengeOptions = computed(() => {
+  return challenges.value.filter((challenge) => challenge.targetMedia === kind.value)
+})
+
+// The item's first event is optional: the user can remove the event card to add the item without one
+const includeEvent = ref(true)
+
+function addEvent() {
+  completedAt.value = new Date()
+  activatedChallengeIds.value = defaultActivatedChallengeIds()
+  includeEvent.value = true
+}
+
+const isSubmitting = ref(false)
+const errorMessage = ref<string | null>(null)
+
+const isInvalidValid = computed(() => {
+  if (kind.value === "Book") {
+    const hasName = bookModel.value.name.length > 0
+    const hasAuthor = bookModel.value.author.length > 0
+
+    return !(hasName && hasAuthor) || isSubmitting.value
+
+  } else if (kind.value === "Game") {
+    const hasTitle = gameModel.value.title.length > 0
+    const hasAuthor = gameModel.value.creator.length > 0
+    return !(hasTitle && hasAuthor) || isSubmitting.value
+  }
+
+  return true
+
+})
+
+function cancel(): void {
+  router.back()
+}
+
+async function submitForm(): Promise<void> {
+  function toItem(): Omit<LibraryItem, "id" | "addedAt"> {
+    if (kind.value === 'Book') {
+      const newBook: Omit<Book, "id" | "addedAt"> = {
+        kind: "Book",
+        title: bookModel.value.name,
+        author: bookModel.value.author,
+        translator: bookModel.value.translator,
+        favorite: false,
+      }
+      return newBook
+    }
+    if (kind.value === 'Game') {
+      const newGame: Omit<Game, "id" | "addedAt"> = {
+        kind: 'Game',
+        title: gameModel.value.title,
+        creator: gameModel.value.creator,
+        favorite: false,
+      }
+
+      return newGame
+    }
+
+    throw new Error("Invalid state, kind unknown")
+  }
+
+
+  const item = toItem()
+
+
+  isSubmitting.value = true
+  errorMessage.value = null
+  let newId: string | undefined
+  try {
+    newId = await libraryApi.addLibraryItem(item)
+    if (newId === undefined) {
+      errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
+      isSubmitting.value = false
+      return
+    }
+  } catch (error) {
+    console.error("Failed to save item:", error)
+    errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
+    isSubmitting.value = false
+    return
+  }
+
+  // The item is saved now. If its event fails, don't stay on the form: retrying from here would
+  // add the item a second time. The item's Events tab shows the error instead.
+  let eventSaveFailed = false
+  if (includeEvent.value) {
+    try {
+      await eventApi.addEvent({
+        itemId: newId,
+        completedAt: completedAt.value.toISOString(),
+        activatedChallengeIds: activatedChallengeIds.value,
+      })
+    } catch (error) {
+      console.error("Failed to save event:", error)
+      eventSaveFailed = true
+    }
+  }
+  isSubmitting.value = false
+
+  // Replace the form's history entry, so going back from the new item doesn't reopen the form
+  // Open the Events tab when an event was added (or failed), otherwise the item's details
+  router.replace({
+    name: "libraryItem",
+    params: { id: newId },
+    state: { entryTab: includeEvent.value ? 1 : 0, eventSaveFailed },
+  })
+}
+
+const kinds = [
+  { name: "Kirja", value: "Book" },
+  { name: "Peli", value: "Game" },
+]
+
+</script>
+
+<template>
+  <div class="flex flex-col items-center px-0 md:px-4">
+    <ResponsiveCardWrapper>
+      <div class="flex flex-col w-full">
+        <div
+          class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky top-0 z-10">
+          <BrandedButton :onClick="cancel" icon="Back" variant="primary" class="ml-2 md:ml-0"
+            data-testid="back-button" />
+          <h1 class="text-lg md:text-xl font-bold whitespace-normal">Lisää uusi</h1>
+          <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->
+        </div>
+
+        <form class="w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
+          <div class="flex flex-col gap-4">
+            <BrandedSelect v-model="kind" :options="kinds" title="Tyyppi" />
+            <div v-if="kind === 'Book'">
+              <TextInput name="name" label="Nimi" v-model="bookModel.name" icon="Book" />
+              <TextInput name="author" label="Kirjailija" :required="true" v-model="bookModel.author"
+                icon="Author" />
+              <TextInput name="translator" label="Kääntäjä" :required="false" v-model="bookModel.translator"
+                icon="Translator" />
+            </div>
+            <div v-if="kind === 'Game'">
+              <TextInput name="name" label="Nimi" v-model="gameModel.title" icon="Game" />
+              <TextInput name="author" label="Tekijä" :required="true" v-model="gameModel.creator" icon="Author" />
+            </div>
+            <div v-if="includeEvent" class="flex flex-col gap-3 rounded border border-brand-orange bg-white p-3">
+              <div class="flex flex-row items-center justify-between gap-2">
+                <h2 class="font-medium">Tapahtuma</h2>
+                <BrandedButton
+                  icon="Delete"
+                  :onClick="() => (includeEvent = false)"
+                  variant="secondary"
+                  :is-pill="true"
+                  aria-label="Poista tapahtuma"
+                />
+              </div>
+              <EventFields
+                v-model:completed-at="completedAt"
+                v-model:activated-challenge-ids="activatedChallengeIds"
+                :challenges="challengeOptions"
+              />
+            </div>
+            <BrandedButton
+              v-else
+              text="Lisää tapahtuma"
+              :onClick="addEvent"
+              icon="Plus"
+              variant="secondary"
+              :is-pill="true"
+              class="w-fit"
+            />
+            <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
+              {{ errorMessage }}
+            </div>
+            <div class="flex flex-row justify-between py-2 gap-3">
+              <BrandedButton :onClick="cancel" text="Peru" icon="Cross" :is-pill="true" variant="secondary" />
+              <BrandedButton :onClick="submitForm" :disabled="isInvalidValid" text="Tallenna" icon="Check"
+                :is-submitting="isSubmitting" :is-pill="true" :bold="true" variant="primary" />
+            </div>
+          </div>
+        </form>
+      </div>
+    </ResponsiveCardWrapper>
+  </div>
+</template>

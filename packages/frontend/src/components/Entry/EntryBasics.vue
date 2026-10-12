@@ -1,18 +1,15 @@
 <script lang="ts" setup>
 import type { LibraryItem } from '@/models/LibraryItem';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import Button from "@/components/Basics/BrandedButton.vue"
 import TextInput from "@/components/Basics/TextInput.vue"
 import { useLibraryApi } from '@/api/libraryApiClient';
-import type { Challenge } from '@/models/challenge';
-import ManagementList from '../Basics/ManagementList.vue';
 
 const libraryApi = useLibraryApi()
 
 
-const { item, challenges } = defineProps<{
+const { item } = defineProps<{
   item: LibraryItem
-  challenges: Challenge[]
 }>()
 
 const emit = defineEmits<{
@@ -63,34 +60,6 @@ async function deleteItem() {
   emit("editModeChanged", false)
 }
 
-const activatedChallengeList = computed(() => {
-  return item.activatedChallengeIds.map((id) => {
-    const challenge = challenges.find((challenge) => challenge.id === id)
-    if (challenge) {
-      return {
-        value: challenge.id,
-        display: challenge.name
-      }
-    }
-    return undefined
-  }).filter((challenge): challenge is { value: string, display: string } => challenge !== null)
-})
-
-const allChallenges = computed(() => {
-  return challenges.filter(t => t.targetMedia === item.kind).map((challenge) => {
-    return {
-      value: challenge.id,
-      display: challenge.name
-    }
-  })
-})
-
-function onChallengeStateChanged(challengeIds: string[]) {
-  if (modifyTarget.value) {
-    modifyTarget.value.activatedChallengeIds = challengeIds
-  }
-}
-
 </script>
 
 <template>
@@ -107,11 +76,6 @@ function onChallengeStateChanged(challengeIds: string[]) {
           <TextInput name="author" label="Tekijä(t)" :required=true v-model="modifyTarget!.creator" />
         </div>
 
-      </div>
-      <div>
-        <h2>Aktiiviset haasteet</h2>
-        <ManagementList :items="activatedChallengeList" :allOptions="allChallenges"
-          @stateChanged="onChallengeStateChanged" />
       </div>
 
       <div class="flex flex-row gap-2 py-3">

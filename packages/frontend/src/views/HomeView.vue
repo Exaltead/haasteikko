@@ -2,33 +2,39 @@
 import { useChallengeApi } from '@/api/challengeApiClient'
 import { useAnswerApi } from '@/api/answerApiClient'
 import { useLibraryApi } from '@/api/libraryApiClient'
-import type { Challenge, Answer } from '@/models/challenge'
-import type { LibraryItem } from '@/models/LibraryItem'
+import { useEventApi } from '@/api/eventApiClient'
+import { useSolutionsApi } from '@/api/solutionsApiClient'
+import type { Challenge, Answer, Solution } from '@/models/challenge'
+import type { Event } from '@/models/Event'
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ChallengeCard from '@/components/Challenge/ChallengeCard.vue'
 import LoadingSpinner from '@/components/Basics/LoadingSpinner.vue'
 import EntryListing from '@/components/EntryListing/EntryListing.vue'
-import NewItemModal from '@/components/EntryListing/NewItemModal.vue'
 import BrandedButton from '@/components/Basics/BrandedButton.vue'
 import BaseIcon from '@/components/Icons/BaseIcon.vue'
 import {
   filterByStatus,
   getAttachedItemCount,
   getCompletedCount,
+  getSolvedCount,
   getTotalCount,
 } from '@/composables/useChallengeProgress'
+import { withLastCompletedAt, type LibraryItemWithCompletion } from '@/composables/useEventSummary'
 
 const router = useRouter()
 const challengeApiClient = useChallengeApi()
 const answerApiClient = useAnswerApi()
 const libraryApiClient = useLibraryApi()
+const eventApiClient = useEventApi()
+const solutionsApiClient = useSolutionsApi()
 
 const challenges = ref<Challenge[]>([])
 const answersByChallenge = ref<Map<string, Answer[]>>(new Map())
-const libraryItems = ref<LibraryItem[]>([])
+const solutionsByChallenge = ref<Map<string, Solution[]>>(new Map())
+const libraryItems = ref<LibraryItemWithCompletion[]>([])
+const events = ref<Event[]>([])
 const loading = ref(true)
-const showNewItemModal = ref(false)
 
 const activeChallenges = computed(() => filterByStatus(challenges.value, "active"))
 
@@ -41,47 +47,40 @@ const recentLibraryItems = computed(() => {
 async function loadData() {
   loading.value = true
 
-  const [challengesResult, itemsResult] = await Promise.all([
+  const [challengesResult, itemsResult, eventsResult] = await Promise.all([
     challengeApiClient.fetchChallenges(),
-    libraryApiClient.fetchLibraryItems()
+    libraryApiClient.fetchLibraryItems(),
+    eventApiClient.fetchEvents(),
   ])
 
   challenges.value = challengesResult
-  libraryItems.value = itemsResult
+  events.value = eventsResult
+  libraryItems.value = withLastCompletedAt(itemsResult, eventsResult)
 
   const active = filterByStatus(challenges.value, "active")
   const answerPromises = active.map(async (challenge) => {
-    const answers = await answerApiClient.searchAnswers({ challengeId: challenge.id })
-    return { challengeId: challenge.id, answers }
+    const [answers, solutions] = await Promise.all([
+      answerApiClient.searchAnswers({ challengeId: challenge.id }),
+      solutionsApiClient.searchSolutions({ challengeId: challenge.id }),
+    ])
+    return { challengeId: challenge.id, answers, solutions }
   })
 
   const results = await Promise.all(answerPromises)
-  const newMap = new Map<string, Answer[]>()
-  for (const result of results) {
-    newMap.set(result.challengeId, result.answers)
-  }
-  answersByChallenge.value = newMap
+  answersByChallenge.value = new Map(results.map((r) => [r.challengeId, r.answers]))
+  solutionsByChallenge.value = new Map(results.map((r) => [r.challengeId, r.solutions]))
 
   loading.value = false
 }
 
 onMounted(loadData)
 
-function openNewItemModal() {
-  showNewItemModal.value = true
-}
-
-function closeNewItemModal() {
-  showNewItemModal.value = false
-}
-
-function onNewItemSubmitComplete(id: string) {
-  showNewItemModal.value = false
-  router.push({ name: 'libraryItem', params: { id } })
+function openNewItemPage() {
+  router.push({ name: 'newLibraryItem' })
 }
 
 async function onItemUpdated() {
-  libraryItems.value = await libraryApiClient.fetchLibraryItems()
+  libraryItems.value = withLastCompletedAt(await libraryApiClient.fetchLibraryItems(), events.value)
 }
 </script>
 
@@ -109,8 +108,15 @@ async function onItemUpdated() {
             :key="challenge.id"
             :challenge="challenge"
             :completed-count="getCompletedCount(challenge, answersByChallenge.get(challenge.id) ?? [])"
+            :solved-count="
+              getSolvedCount(
+                challenge,
+                solutionsByChallenge.get(challenge.id) ?? [],
+                answersByChallenge.get(challenge.id) ?? [],
+              )
+            "
             :total-count="getTotalCount(challenge)"
-            :attached-item-count="getAttachedItemCount(challenge, libraryItems)"
+            :attached-item-count="getAttachedItemCount(challenge, libraryItems, events)"
           />
         </div>
       </div>
@@ -130,7 +136,7 @@ async function onItemUpdated() {
           </RouterLink>
           <BrandedButton
             text="Lisää uusi"
-            :onClick="openNewItemModal"
+            :onClick="openNewItemPage"
             icon="Plus"
             :isPill="true"
             variant="primary"
@@ -154,11 +160,5 @@ async function onItemUpdated() {
         />
       </div>
     </div>
-
-    <NewItemModal
-      :is-modal-open="showNewItemModal"
-      @submitComplete="onNewItemSubmitComplete"
-      @close="closeNewItemModal"
-    />
   </div>
 </template>

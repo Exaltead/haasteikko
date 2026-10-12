@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import { computed } from "vue"
-import type { LibraryItem } from "@/models/LibraryItem"
 import type { YearFilterOption, EntryTypeFilter } from "@/api/preferencesApiClient"
+import type { LibraryItemWithCompletion } from "@/composables/useEventSummary"
 import LibraryItemCard from "./LibraryItemCard.vue"
 
 const props = withDefaults(
   defineProps<{
-    items: LibraryItem[]
+    items: LibraryItemWithCompletion[]
     yearFilter?: YearFilterOption
     typeFilter?: EntryTypeFilter[]
     searchQuery?: string
@@ -24,7 +24,7 @@ const emit = defineEmits<{
   itemUpdated: []
 }>()
 
-function matchesSearch(item: LibraryItem, query: string): boolean {
+function matchesSearch(item: LibraryItemWithCompletion, query: string): boolean {
   const searchLower = query.toLowerCase()
   if (item.title.toLowerCase().includes(searchLower)) return true
   if (item.kind === "Book") {
@@ -47,7 +47,7 @@ const listItems = computed(() => {
   if (props.yearFilter !== "all") {
     filteredItems = filteredItems.filter(
       (item) => {
-        const date = item.completedAt ? new Date(item.completedAt) : new Date(item.addedAt)
+        const date = item.lastCompletedAt ? new Date(item.lastCompletedAt) : new Date(item.addedAt)
         return date.getFullYear() === props.yearFilter
       },
     )
@@ -58,8 +58,8 @@ const listItems = computed(() => {
   }
 
   const sortedItems = filteredItems.sort((a, b) => {
-    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
-    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
+    const dateA = a.lastCompletedAt ? new Date(a.lastCompletedAt).getTime() : 0
+    const dateB = b.lastCompletedAt ? new Date(b.lastCompletedAt).getTime() : 0
     return dateA - dateB
   })
 
@@ -77,9 +77,9 @@ const listItems = computed(() => {
   const combined = [...books, ...games]
 
   const resorted = combined.sort((a, b) => {
-    // Primary: completedAt descending (newest first)
-    const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
-    const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
+    // Primary: lastCompletedAt descending (newest first)
+    const dateA = a.lastCompletedAt ? new Date(a.lastCompletedAt).getTime() : 0
+    const dateB = b.lastCompletedAt ? new Date(b.lastCompletedAt).getTime() : 0
     if (dateA !== dateB) return dateB - dateA
 
     // Secondary: addedAt descending (newer additions first)

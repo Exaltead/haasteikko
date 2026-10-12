@@ -1,22 +1,33 @@
 <script lang="ts" setup>
 import { useChallengeApi } from '@/api/challengeApiClient';
-import { useLibraryApi } from '@/api/libraryApiClient';;
+import { useLibraryApi } from '@/api/libraryApiClient';
+import { useEventApi } from '@/api/eventApiClient';
+import { useAnswerApi } from '@/api/answerApiClient';
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
-import EntryChallenge from '@/components/Entry/EntryChallenge.vue';
+import EntryEvent from '@/components/Entry/EntryEvent.vue';
+import EventModal from '@/components/Entry/EventModal.vue';
 import BaseIcon from '@/components/Icons/BaseIcon.vue';
-import type { Challenge } from '@/models/challenge';
+import BrandedButton from '@/components/Basics/BrandedButton.vue';
+import TabNavigation from '@/components/Basics/TabNavigation.vue';
+import ResponsiveCardWrapper from '@/components/Basics/ResponsiveCardWrapper.vue';
+import EmptyState from '@/components/Basics/EmptyState.vue';
+import { useGoBack } from '@/composables/useGoBack';
+import type { Answer, Challenge } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
-import { TabGroup, TabList, TabPanel, TabPanels, Tab } from '@headlessui/vue';
+import type { Event } from '@/models/Event';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { z } from 'zod';
 
 const libraryApi = useLibraryApi()
 const challengeApiClient = useChallengeApi()
+const eventApi = useEventApi()
+const answerApi = useAnswerApi()
 
 const route = useRoute()
 
 const router = useRouter()
+const goBack = useGoBack()
 
 function toLibrary() {
   router.push({ name: "home" })
@@ -24,6 +35,27 @@ function toLibrary() {
 
 const challenges = ref<Challenge[]>([])
 const item = ref<LibraryItem | undefined>(undefined)
+const events = ref<Event[]>([])
+const answers = ref<Answer[]>([])
+
+// Selected tab, kept in this history entry's state: NewEntryView's redirect opens the Events tab,
+// and navigating back from a challenge answer page returns to whichever tab was open. One-time
+// navigation state only - not meant to survive a refresh or be shareable.
+const initialTabIndex = (history.state as { entryTab?: number } | null)?.entryTab ?? 0
+
+function onTabChanged(index: number) {
+  history.replaceState({ ...history.state, entryTab: index }, "")
+}
+
+// Set by NewEntryView when the item was saved but its first event wasn't
+const eventSaveFailed = ref(
+  (history.state as { eventSaveFailed?: boolean } | null)?.eventSaveFailed ?? false,
+)
+
+function dismissEventSaveError() {
+  eventSaveFailed.value = false
+  history.replaceState({ ...history.state, eventSaveFailed: false }, "")
+}
 
 async function getChallenges() {
   challenges.value = await challengeApiClient.fetchChallenges()
@@ -33,21 +65,24 @@ async function getItem() {
   const foundItem = await libraryApi.getLibraryItem(itemId)
   item.value = foundItem
 }
+async function getEvents() {
+  const itemId = z.string().parse(route.params.id)
+  events.value = await eventApi.fetchEventsForItem(itemId)
+}
+
+async function getAnswers() {
+  const itemId = z.string().parse(route.params.id)
+  answers.value = await answerApi.searchAnswers({ itemId })
+}
 
 async function fetchData() {
-  await Promise.all([getChallenges(), getItem()])
+  await Promise.all([getChallenges(), getItem(), getEvents(), getAnswers()])
 }
 
 
 watch(() => route.params.id, fetchData, { immediate: true })
 
 
-
-function makeTabStyle(selected: boolean) {
-  return selected
-    ? "bg-brand-primary text-white"
-    : "bg-white text-brand-primary hover:bg-brand-primary hover:text-white"
-}
 
 const inEditMode = ref(false)
 function setEditingMode(state: boolean) {
@@ -58,44 +93,97 @@ function setEditingMode(state: boolean) {
   }
 }
 
-const challengeKeys = computed(() => {
-  if (item.value) {
-    const mapped = item.value.activatedChallengeIds.map((t, i) => {
-      const challenge = challenges.value.find(t2 => t2.id === t)
-      return { value: t, display: challenge?.name ?? ("Haaste " + i) }
-    })
+const showEventModal = ref(false)
+const editingEvent = ref<Event | undefined>(undefined)
 
-    return mapped
-  }
-  return []
+function openEventModal(event?: Event) {
+  editingEvent.value = event
+  showEventModal.value = true
+}
+
+async function onEventSaved() {
+  showEventModal.value = false
+  dismissEventSaveError()
+  await getEvents()
+}
+
+const sortedEvents = computed(() => {
+  return [...events.value].sort(
+    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+  )
 })
 
 </script>
 
 <template>
-  <main>
-    <div>
-      <button :onClick="router.back" class="p-4" data-testid="back-button">
-        <BaseIcon name="Back" class="text-brand-primary w-8 h-fit cursor-pointer" />
-      </button>
-      <div class="px-4 md:px-10 flex flex-col gap-10" v-if="item">
-        <EntryBasics @objectDeleted="toLibrary" :challenges="challenges" @object-edited="getItem" :item="item"
-          @edit-mode-changed="setEditingMode" />
-        <TabGroup v-if="!inEditMode && challengeKeys.length > 0">
-          <TabList class="flex flex-row gap-6">
-            <Tab v-for="{ display, value } in challengeKeys" :key="value" v-slot="{ selected }">
-              <button :class="makeTabStyle(selected)">
-                <span>{{ display }}</span>
-              </button>
-            </Tab>
-          </TabList>
-          <TabPanels>
-            <TabPanel v-for="{ value } in challengeKeys" :key="value">
-              <EntryChallenge :itemId="item.id" :challengeId="value" />
-            </TabPanel>
-          </TabPanels>
-        </TabGroup>
-      </div>
+  <div>
+    <div v-if="!item">
+      <h1>Ladataan...</h1>
     </div>
-  </main>
+    <div v-else class="flex flex-col items-center px-0 md:px-4">
+      <ResponsiveCardWrapper>
+        <div class="flex flex-col w-full">
+          <div
+            class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky top-0 z-10">
+            <BrandedButton :onClick="() => goBack({ name: 'library' })" icon="Back" variant="primary" class="ml-2 md:ml-0"
+              data-testid="back-button" />
+            <div class="flex items-center gap-2">
+              <BaseIcon :name="item.kind" class="w-6 h-6 md:w-8 md:h-8 text-brand-orange/70" />
+              <h1 class="text-lg md:text-xl font-bold whitespace-normal">{{ item.title }}</h1>
+            </div>
+            <div class="w-8 md:w-10"></div> <!-- Spacer for balance -->
+          </div>
+
+          <TabNavigation tab1Label="Tiedot" :tab2Label="`Tapahtumat (${sortedEvents.length})`"
+            :default-index="initialTabIndex" @change="onTabChanged">
+            <template #tab1>
+              <div class="w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
+                <EntryBasics @objectDeleted="toLibrary" @object-edited="getItem" :item="item"
+                  @edit-mode-changed="setEditingMode" />
+              </div>
+            </template>
+
+            <template #tab2>
+              <div class="flex flex-col gap-3 w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
+                <div v-if="eventSaveFailed"
+                  class="flex flex-row items-start justify-between gap-2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded"
+                  data-testid="event-save-error">
+                  <span>Kohde tallennettiin, mutta tapahtuman tallentaminen epäonnistui. Lisää tapahtuma uudelleen.</span>
+                  <button type="button" class="font-bold" aria-label="Sulje" @click="dismissEventSaveError">×</button>
+                </div>
+                <div class="flex flex-row justify-start">
+                  <BrandedButton
+                    text="Lisää uusi"
+                    :onClick="() => openEventModal()"
+                    icon="Plus"
+                    :isPill="true"
+                    variant="primary"
+                    :bold="true"
+                  />
+                </div>
+                <EmptyState v-if="sortedEvents.length === 0" message="Ei vielä tapahtumia" />
+                <EntryEvent
+                  v-for="event in sortedEvents"
+                  :key="event.id"
+                  :event="event"
+                  :item="item"
+                  :challenges="challenges"
+                  :answers="answers"
+                  @edit="openEventModal(event)"
+                />
+              </div>
+            </template>
+          </TabNavigation>
+        </div>
+      </ResponsiveCardWrapper>
+      <EventModal
+        :is-modal-open="showEventModal"
+        :item="item"
+        :challenges="challenges"
+        :event="editingEvent"
+        @submit-complete="onEventSaved"
+        @close="showEventModal = false"
+      />
+    </div>
+  </div>
 </template>

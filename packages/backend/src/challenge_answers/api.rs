@@ -83,6 +83,9 @@ async fn search_answers(
         user_id: &user.id,
         item_id: query.item_id.as_deref(),
         challenge_id: query.challenge_id.as_deref(),
+        // Challenge-wide queries feed progress and solutions, which must not count answers of
+        // items whose events no longer link the challenge. Item-scoped queries return everything.
+        only_linked: query.item_id.is_none(),
     };
     let answers = get_challenge_answers(&state.database_path, filter)
         .map_err(|err| map_to_internal_error(Box::new(err)))?;

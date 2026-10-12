@@ -1,20 +1,18 @@
 <script setup lang="ts">
 
-import type { Answer, Question, QuestionType } from "@/models/challenge";
+import type { Answer, Challenge, QuestionType } from "@/models/challenge";
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from "@headlessui/vue"
 import { v4 } from "uuid";
 import { computed, ref, watch } from "vue";
 
-import { useChallengeApi } from "@/api/challengeApiClient";
 import { useAnswerApi } from "@/api/answerApiClient";
 import TextInput from "../Basics/TextInput.vue";
 import AnswerStatus from "./AnswerStatus.vue";
 import { useAnswerSaving } from "@/composables/useAnswerSaving";
 
-const challengeApiClient = useChallengeApi()
 const answerApiClient = useAnswerApi()
 
-const props = defineProps<{ itemId: string, challengeId: string }>()
+const props = defineProps<{ itemId: string, challenge: Challenge }>()
 const emits = defineEmits<{
   (e: 'submit', answers: Answer[]): void
 }>()
@@ -28,18 +26,15 @@ const {
   isAnswerDisabled, 
   saveAnswers, 
   updateAnswerStates 
-} = useAnswerSaving(answersMap, props.challengeId, props.itemId, emits, answerApiClient)
-const questions = ref<Question[]>([])
-const challengeName = ref<string>("Haaste")
+} = useAnswerSaving(answersMap, props.challenge.id, props.itemId, emits, answerApiClient)
+const questions = computed(() => props.challenge.questions)
 async function refreshData(): Promise<void> {
-  const answers = await answerApiClient.searchAnswers({ challengeId: props.challengeId, itemId: props.itemId })
-  const challenge = (await challengeApiClient.fetchChallenges())
-    .find(t => t.id === props.challengeId)
-  if (challenge) {
-    challengeName.value = challenge.name
-  }
+  const answers = await answerApiClient.searchAnswers({
+    challengeId: props.challenge.id,
+    itemId: props.itemId,
+  })
 
-  const newQuestions = challenge?.questions ?? []
+  const newQuestions = props.challenge.questions
   const newMap = new Map<string, Answer>(answers.map((answer) => [answer.id, { ...answer }]))
   for (const question of newQuestions) {
     if (answers.find(t => t.questionId === question.id)) {
@@ -71,7 +66,6 @@ async function refreshData(): Promise<void> {
     }
   }
 
-  questions.value = newQuestions
   answersMap.value = newMap
 }
 
@@ -143,10 +137,6 @@ watch(answersMap, async (newValue) => {
 
 <template>
   <div>
-
-    <div class="flex flex-row gap-2 justify-between items-center bg-light-gray p-2">
-      <h1>{{ challengeName }}</h1>
-    </div>
     <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-2">
       {{ errorMessage }}
     </div>

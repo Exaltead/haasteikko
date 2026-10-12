@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router"
 import EntryListingView from "@/views/EntryListingView.vue"
 import EntryView from "@/views/EntryView.vue"
+import NewEntryView from "@/views/NewEntryView.vue"
+import ItemChallengeView from "@/views/ItemChallengeView.vue"
 import LoginView from "@/views/LoginView.vue"
 import ChallengeManagementView from "@/views/ChallengeManagementView.vue"
 import ChallengeSolutionView from "@/views/ChallengeSolutionView.vue"
@@ -30,9 +32,21 @@ const router = createRouter({
       beforeEnter: authGuard,
     },
     {
+      path: "/library/new",
+      name: "newLibraryItem",
+      component: NewEntryView,
+      beforeEnter: authGuard,
+    },
+    {
       path: "/library/:id",
       name: "libraryItem",
       component: EntryView,
+      beforeEnter: authGuard,
+    },
+    {
+      path: "/library/:id/challenges/:challengeId",
+      name: "itemChallengeAnswers",
+      component: ItemChallengeView,
       beforeEnter: authGuard,
     },
     {

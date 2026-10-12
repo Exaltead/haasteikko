@@ -1,8 +1,6 @@
 type BaseLibraryItem = {
   id: string
-  activatedChallengeIds: string[]
   favorite: boolean
-  completedAt: string
   addedAt: string
 }
 
