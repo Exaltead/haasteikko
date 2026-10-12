@@ -188,15 +188,13 @@ const kinds = [
               <TextInput name="author" label="Tekijä" :required="true" v-model="gameModel.creator" icon="Author" />
             </div>
             <DatePicker v-model="completedAt" label="Päiväys" icon="Calendar" />
-            <div>
-              <h2>Liitetyt haasteet</h2>
-              <ManagementList
-                :key="kind"
-                :items="selectedChallengeItems"
-                :allOptions="allChallengeOptions"
-                @stateChanged="onChallengeStateChanged"
-              />
-            </div>
+            <ManagementList
+              :key="kind"
+              title="Haasteet"
+              :items="selectedChallengeItems"
+              :allOptions="allChallengeOptions"
+              @stateChanged="onChallengeStateChanged"
+            />
             <div class="flex flex-row justify-between py-2 gap-3">
               <BrandedButton :onClick="cancel" text="Peru" icon="Cross" :is-pill="true" variant="secondary" />
               <BrandedButton :onClick="submitForm" :disabled="isInvalidValid" text="Tallenna" icon="Check"

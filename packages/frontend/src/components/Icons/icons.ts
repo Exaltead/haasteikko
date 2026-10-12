@@ -111,4 +111,10 @@ export const icons: Record<IconName, IconDefinition> = {
     title: "menu",
     path: "M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z",
   },
+  Edit: {
+    viewBox: "0 -960 960 960",
+    sized: true,
+    title: "pencil",
+    path: "M200-200h57l391-391-57-57-391 391v57ZM120-120v-170l528-527q12-12 27-18t30-6q16 0 30.5 6t26.5 18l55 56q12 12 17.5 26.5T840-707q0 15-5.5 29.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-28 57 57-29-29Z",
+  },
 }

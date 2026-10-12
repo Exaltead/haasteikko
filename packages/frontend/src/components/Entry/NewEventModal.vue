@@ -79,14 +79,12 @@ function closeModal(): void {
     <div class="flex flex-col gap-4 p-4">
       <DatePicker v-model="completedAt" label="Päiväys" icon="Calendar" />
 
-      <div>
-        <h2>Liitetyt haasteet</h2>
-        <ManagementList
-          :items="selectedChallengeItems"
-          :allOptions="allChallengeOptions"
-          @stateChanged="onChallengeStateChanged"
-        />
-      </div>
+      <ManagementList
+        title="Haasteet"
+        :items="selectedChallengeItems"
+        :allOptions="allChallengeOptions"
+        @stateChanged="onChallengeStateChanged"
+      />
 
       <div class="flex flex-row justify-between py-2 gap-3">
         <BrandedButton :onClick="closeModal" text="Peru" icon="Cross" :is-pill="true" variant="secondary" />

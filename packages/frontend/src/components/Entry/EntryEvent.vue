@@ -88,7 +88,7 @@ watch(completedAt, () => {
         <span
           v-for="challenge in linkedChallenges"
           :key="challenge.id"
-          class="rounded-full bg-brand-primary/10 px-2 py-0.5 text-xs text-brand-primary"
+          class="rounded-full bg-brand-primary/10 px-2 py-0.5 text-xs text-text-primary"
         >
           {{ challenge.name }}
         </span>
@@ -101,14 +101,12 @@ watch(completedAt, () => {
     <div v-if="isExpanded" class="flex flex-col gap-4 border-t border-brand-orange/40 p-3">
       <DatePicker v-model="completedAt" label="Päiväys" icon="Calendar" />
 
-      <div>
-        <h2>Liitetyt haasteet</h2>
-        <ManagementList
-          :items="activatedChallengeList"
-          :allOptions="allChallenges"
-          @stateChanged="onChallengeStateChanged"
-        />
-      </div>
+      <ManagementList
+        title="Haasteet"
+        :items="activatedChallengeList"
+        :allOptions="allChallenges"
+        @stateChanged="onChallengeStateChanged"
+      />
 
       <TabGroup v-if="linkedChallenges.length > 0">
         <TabList class="flex flex-row gap-6">
