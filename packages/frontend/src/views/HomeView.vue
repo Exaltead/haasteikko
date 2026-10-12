@@ -3,7 +3,8 @@ import { useChallengeApi } from '@/api/challengeApiClient'
 import { useAnswerApi } from '@/api/answerApiClient'
 import { useLibraryApi } from '@/api/libraryApiClient'
 import { useEventApi } from '@/api/eventApiClient'
-import type { Challenge, Answer } from '@/models/challenge'
+import { useSolutionsApi } from '@/api/solutionsApiClient'
+import type { Challenge, Answer, Solution } from '@/models/challenge'
 import type { Event } from '@/models/Event'
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -16,6 +17,7 @@ import {
   filterByStatus,
   getAttachedItemCount,
   getCompletedCount,
+  getSolvedCount,
   getTotalCount,
 } from '@/composables/useChallengeProgress'
 import { withLastCompletedAt, type LibraryItemWithCompletion } from '@/composables/useEventSummary'
@@ -25,9 +27,11 @@ const challengeApiClient = useChallengeApi()
 const answerApiClient = useAnswerApi()
 const libraryApiClient = useLibraryApi()
 const eventApiClient = useEventApi()
+const solutionsApiClient = useSolutionsApi()
 
 const challenges = ref<Challenge[]>([])
 const answersByChallenge = ref<Map<string, Answer[]>>(new Map())
+const solutionsByChallenge = ref<Map<string, Solution[]>>(new Map())
 const libraryItems = ref<LibraryItemWithCompletion[]>([])
 const events = ref<Event[]>([])
 const loading = ref(true)
@@ -55,16 +59,16 @@ async function loadData() {
 
   const active = filterByStatus(challenges.value, "active")
   const answerPromises = active.map(async (challenge) => {
-    const answers = await answerApiClient.searchAnswers({ challengeId: challenge.id })
-    return { challengeId: challenge.id, answers }
+    const [answers, solutions] = await Promise.all([
+      answerApiClient.searchAnswers({ challengeId: challenge.id }),
+      solutionsApiClient.searchSolutions({ challengeId: challenge.id }),
+    ])
+    return { challengeId: challenge.id, answers, solutions }
   })
 
   const results = await Promise.all(answerPromises)
-  const newMap = new Map<string, Answer[]>()
-  for (const result of results) {
-    newMap.set(result.challengeId, result.answers)
-  }
-  answersByChallenge.value = newMap
+  answersByChallenge.value = new Map(results.map((r) => [r.challengeId, r.answers]))
+  solutionsByChallenge.value = new Map(results.map((r) => [r.challengeId, r.solutions]))
 
   loading.value = false
 }
@@ -104,6 +108,13 @@ async function onItemUpdated() {
             :key="challenge.id"
             :challenge="challenge"
             :completed-count="getCompletedCount(challenge, answersByChallenge.get(challenge.id) ?? [])"
+            :solved-count="
+              getSolvedCount(
+                challenge,
+                solutionsByChallenge.get(challenge.id) ?? [],
+                answersByChallenge.get(challenge.id) ?? [],
+              )
+            "
             :total-count="getTotalCount(challenge)"
             :attached-item-count="getAttachedItemCount(challenge, libraryItems, events)"
           />

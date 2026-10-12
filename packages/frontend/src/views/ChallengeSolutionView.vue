@@ -35,6 +35,13 @@ const challengeName = ref("")
 const challengeMediaType = ref<"Book" | "Game">("Book")
 
 const solution = ref<Solution[]>([])
+
+// Boolean questions pick a single item; TextInput questions always pick a list of items (one per
+// cluster slot, even when the cluster size is 1), which is what QuestionSolutionItem renders.
+function solutionKindFor(question: Question): Solution["kind"] {
+  return question.kind === "TextInput" ? "MultiPartSolution" : "SinglePartSolution"
+}
+
 async function getSolution(): Promise<Solution[]> {
   const challengeId = route.params.id as string
   const serverSolutions = await solutionsApiClient.searchSolutions({ challengeId: challengeId })
@@ -45,7 +52,7 @@ async function getSolution(): Promise<Solution[]> {
     const existingSolution = serverSolutions.find(t => t.questionId === question.id)
     if (existingSolution === undefined) {
       result.push({
-        kind: question.questionClusterSize > 1 ? "MultiPartSolution" : "SinglePartSolution",
+        kind: solutionKindFor(question),
         questionId: question.id,
         singleAnswerItemId: "",
         multipleAnswerItemIds: [...Array(question.questionClusterSize).keys()].map(() => "")
@@ -54,7 +61,7 @@ async function getSolution(): Promise<Solution[]> {
       if (question.kind === "TextInput" && existingSolution.multipleAnswerItemIds.length !== question.questionClusterSize) {
         existingSolution.multipleAnswerItemIds = [...Array(question.questionClusterSize).keys()].map(() => "")
       }
-      result.push(existingSolution)
+      result.push({ ...existingSolution, kind: solutionKindFor(question) })
     }
   }
   return result
@@ -114,6 +121,10 @@ watch(solution, async (newValue) => {
   if (loading.value) return
 
   const newSolutionStr = JSON.stringify(newValue)
+  // The watcher also fires once for the assignment in loadData, after `loading` has been reset.
+  // Skip that no-op save: the backend replaces the whole set, so a late one could overwrite a
+  // choice the user made right after the page opened.
+  if (newSolutionStr === previousSolution) return
 
   if (previousSolution) {
     const oldSolution: Solution[] = JSON.parse(previousSolution)

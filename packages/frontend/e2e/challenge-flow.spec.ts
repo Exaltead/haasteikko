@@ -107,7 +107,30 @@ test("User can create a challenge, add a book, answer a question, and verify res
   // Step 6 — Verify the home page challenge card
   await authenticatedPage.goto("/home")
 
-  await expect(authenticatedPage.getByText(challengeName)).toBeVisible()
-  await expect(authenticatedPage.getByText("1 / 1")).toBeVisible()
-  await expect(authenticatedPage.getByText("1 kirjaa")).toBeVisible()
+  // Challenges are shared between users, so scope checks to this test's own card
+  const homeCard = authenticatedPage.getByRole("link", { name: challengeName })
+  await expect(homeCard).toBeVisible()
+  await expect(homeCard.getByText("1 / 1")).toBeVisible()
+  await expect(homeCard.getByText("1 kirjaa")).toBeVisible()
+  // Answered, but no solution chosen yet
+  await expect(homeCard.getByText("0 ratkaistu")).toBeVisible()
+
+  // Step 7 — Choose the book as the solution; the green solved count follows
+  await homeCard.click()
+  const solutionSaved = authenticatedPage.waitForResponse(
+    (res) => res.url().includes("/solution/") && res.request().method() === "POST",
+  )
+  await authenticatedPage.locator("select").selectOption({ label: bookName })
+  await solutionSaved
+
+  await authenticatedPage.goto("/home")
+  await expect(homeCard.getByText("1 ratkaistu")).toBeVisible()
+
+  // Step 8 — Deleting the solution item drops both counts
+  await authenticatedPage.goto("/library")
+  await authenticatedPage.getByRole("link", { name: authorName }).click()
+  await authenticatedPage.getByRole("button", { name: "Poista" }).click()
+  await expect(authenticatedPage).toHaveURL(/\/home$/)
+  await expect(homeCard.getByText("0 / 1")).toBeVisible()
+  await expect(homeCard.getByText("0 ratkaistu")).toBeVisible()
 })

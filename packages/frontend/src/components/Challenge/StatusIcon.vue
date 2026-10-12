@@ -23,8 +23,8 @@ const getIconName = (status: QuestionStatus): IconName | null => {
 const getIconColor = (status: QuestionStatus): string => {
   switch (status) {
     case 'warning': return 'text-yellow-500'
-    case 'selected': return 'text-green-500'
-    case 'unique': return 'text-green-500'
+    case 'selected': return 'text-brand-green'
+    case 'unique': return 'text-brand-green'
     default: return 'text-transparent'
   }
 }

@@ -13,6 +13,8 @@
     --color-brand-disabled: #FFEAE5;
     --color-brand-primary: #FFA89E;
     --color-brand-black: #444444;
+    /* Success/solved state; same value as Tailwind's green-500 */
+    --color-brand-green: oklch(72.3% 0.219 149.579);
 }
 
 @layer components {
