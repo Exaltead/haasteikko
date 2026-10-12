@@ -84,17 +84,13 @@ function applyPreferences() {
   }
 }
 
-watch(yearFilter, async (newValue) => {
+// The backend replaces the whole preferences object, so always save both filters together
+watch([yearFilter, typeFilter], async ([year, types]) => {
   try {
-    await preferencesApi.updatePreferences({ libraryYearFilter: String(newValue) })
-  } catch {
-    // Silently fail on preference save
-  }
-})
-
-watch(typeFilter, async (newValue) => {
-  try {
-    await preferencesApi.updatePreferences({ libraryTypeFilter: newValue })
+    await preferencesApi.updatePreferences({
+      libraryYearFilter: String(year),
+      libraryTypeFilter: types,
+    })
   } catch {
     // Silently fail on preference save
   }
