@@ -36,6 +36,7 @@ const emit = defineEmits<{
 }>()
 
 const isSubmitting = ref(false)
+const errorMessage = ref<string | null>(null)
 
 const editTarget = ref<Challenge>(createEditTarget(target))
 const activeCheckBox = ref(editTarget.value.status === "active")
@@ -80,14 +81,21 @@ async function submit() {
   }
 
   isSubmitting.value = true
-  if (toSend.id === "") {
-    await challengeApiClient.addChallenge(toSend)
+  errorMessage.value = null
+  try {
+    if (toSend.id === "") {
+      await challengeApiClient.addChallenge(toSend)
+    }
+    else {
+      await challengeApiClient.updateChallenge(toSend)
+    }
+  } catch (error) {
+    console.error("Failed to save challenge:", error)
+    errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
+    return
+  } finally {
+    isSubmitting.value = false
   }
-  else {
-    await challengeApiClient.updateChallenge(toSend)
-  }
-
-  isSubmitting.value = false
 
   emit("submitComplete")
 }
@@ -109,6 +117,9 @@ const canSubmit = computed(() => {
           <TextInput class="basis-4/5" v-model="editTarget.name" name="Nimi" label="Haasteen nimi" />
           <BrandedButton text="Tallenna" :onClick="submit" class="h-fit" :isSubmitting="isSubmitting"
             :disabled="!canSubmit"  variant="primary"/>
+        </div>
+        <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
+          {{ errorMessage }}
         </div>
         <div class="flex flex-row gap-4">
           <label for="kind"> Haasteeseen soveltuvat: </label>

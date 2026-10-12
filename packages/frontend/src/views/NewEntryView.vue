@@ -83,6 +83,7 @@ function onChallengeStateChanged(challengeIds: string[]) {
 }
 
 const isSubmitting = ref(false)
+const errorMessage = ref<string | null>(null)
 
 const isInvalidValid = computed(() => {
   if (kind.value === "Book") {
@@ -136,21 +137,28 @@ async function submitForm(): Promise<void> {
 
 
   isSubmitting.value = true
-  const newId = await libraryApi.addLibraryItem(item)
-  if (newId === undefined) {
+  errorMessage.value = null
+  let newId: string | undefined
+  try {
+    newId = await libraryApi.addLibraryItem(item)
+    if (newId === undefined) {
+      errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
+      return
+    }
 
-    //TODO: show error to user
-    isSubmitting.value = false
+    await eventApi.addEvent({
+      itemId: newId,
+      completedAt: completedAt.value.toISOString(),
+      activatedChallengeIds: activatedChallengeIds.value,
+    })
+  } catch (error) {
+    console.error("Failed to save item:", error)
+    errorMessage.value = "Tallentaminen epäonnistui. Yritä uudelleen."
     return
+  } finally {
+    isSubmitting.value = false
   }
 
-  await eventApi.addEvent({
-    itemId: newId,
-    completedAt: completedAt.value.toISOString(),
-    activatedChallengeIds: activatedChallengeIds.value,
-  })
-
-  isSubmitting.value = false
   // Replace the form's history entry, so going back from the new item doesn't reopen the form
   router.replace({ name: "libraryItem", params: { id: newId }, state: { entryTab: 1 } })
 }
@@ -196,6 +204,9 @@ const kinds = [
               :allOptions="allChallengeOptions"
               @stateChanged="onChallengeStateChanged"
             />
+            <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
+              {{ errorMessage }}
+            </div>
             <div class="flex flex-row justify-between py-2 gap-3">
               <BrandedButton :onClick="cancel" text="Peru" icon="Cross" :is-pill="true" variant="secondary" />
               <BrandedButton :onClick="submitForm" :disabled="isInvalidValid" text="Tallenna" icon="Check"

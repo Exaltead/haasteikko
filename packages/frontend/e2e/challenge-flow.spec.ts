@@ -91,7 +91,7 @@ test("User can create a challenge, add a book, answer a question, and verify res
   await expect(challengeCard).toContainText("1 / 1 vastattu")
 
   // A second event linking the same challenge shares the item's single answer set
-  await authenticatedPage.getByRole("button", { name: "Lisää uusi tapahtuma" }).click()
+  await authenticatedPage.getByRole("button", { name: "Lisää uusi" }).click()
   await authenticatedPage.getByRole("button", { name: "Tallenna" }).click()
   await expect(challengeCard).toHaveCount(2)
   for (const card of await challengeCard.all()) {

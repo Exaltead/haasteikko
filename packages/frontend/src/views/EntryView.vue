@@ -134,6 +134,16 @@ const sortedEvents = computed(() => {
 
             <template #tab2>
               <div class="flex flex-col gap-3 w-full max-w-[84rem] mx-auto px-2 md:px-6 py-4">
+                <div class="flex flex-row justify-start">
+                  <BrandedButton
+                    text="Lisää uusi"
+                    :onClick="() => openEventModal()"
+                    icon="Plus"
+                    :isPill="true"
+                    variant="primary"
+                    :bold="true"
+                  />
+                </div>
                 <EmptyState v-if="sortedEvents.length === 0" message="Ei vielä tapahtumia" />
                 <EntryEvent
                   v-for="event in sortedEvents"
@@ -143,12 +153,6 @@ const sortedEvents = computed(() => {
                   :challenges="challenges"
                   :answers="answers"
                   @edit="openEventModal(event)"
-                />
-                <BrandedButton
-                  text="Lisää uusi tapahtuma"
-                  :onClick="() => openEventModal()"
-                  icon="Plus"
-                  variant="primary"
                 />
               </div>
             </template>
