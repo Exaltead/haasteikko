@@ -20,5 +20,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "overrides": {
+    "typescript": "~6.0.3"
   }
 }
