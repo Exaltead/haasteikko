@@ -1,6 +1,7 @@
 import { z } from "zod"
 import type { HttpProxy } from "./HttpProxy"
 import { useHttpApi } from "@/plugins/HttpPlugin"
+import { API_URL } from "./baseApiClient"
 
 const userPreferencesSchema = z.object({
   libraryYearFilter: z.string().nullable().optional(),
@@ -21,11 +22,11 @@ class PreferencesApiClient {
   }
 
   async getPreferences(): Promise<UserPreferences> {
-    return this.proxy.get("preferences", undefined, userPreferencesSchema)
+    return this.proxy.get(`${API_URL}/preferences`, undefined, userPreferencesSchema)
   }
 
   async updatePreferences(preferences: UserPreferences): Promise<void> {
-    return this.proxy.put("preferences", preferences)
+    return this.proxy.put(`${API_URL}/preferences`, preferences)
   }
 }
 

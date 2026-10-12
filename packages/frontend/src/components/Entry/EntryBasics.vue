@@ -57,7 +57,6 @@ async function deleteItem() {
   await libraryApi.deleteItem(item.id)
   isDeleting.value = false
   emit("objectDeleted")
-  emit("editModeChanged", false)
 }
 
 </script>
