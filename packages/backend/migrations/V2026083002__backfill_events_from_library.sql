@@ -9,20 +9,19 @@ SELECT e.id, aic.challenge_id
 FROM activated_item_challenge aic
 JOIN event e ON e.item_id = aic.item_id;
 
-CREATE TABLE answer_new (
-    id TEXT PRIMARY KEY,
-    question_id TEXT NOT NULL REFERENCES question(id) ON DELETE CASCADE,
-    challenge_id TEXT NOT NULL REFERENCES challenge(id) ON DELETE CASCADE,
-    user_id TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    answered INTEGER NOT NULL DEFAULT 0,
-    event_id TEXT REFERENCES event(id) ON DELETE CASCADE
+-- Answers stay keyed by item: a single answer set per (item, challenge), shared by all events.
+DELETE FROM answer WHERE item_id IS NULL;
+
+DELETE FROM answer
+WHERE id NOT IN (
+    SELECT id FROM (
+        SELECT id, ROW_NUMBER() OVER (
+            PARTITION BY user_id, item_id, question_id
+            ORDER BY answered DESC, id
+        ) AS rn
+        FROM answer
+    )
+    WHERE rn = 1
 );
 
-INSERT INTO answer_new (id, question_id, challenge_id, user_id, kind, answer, answered, event_id)
-SELECT a.id, a.question_id, a.challenge_id, a.user_id, a.kind, a.answer, a.answered, e.id
-FROM answer a JOIN event e ON e.item_id = a.item_id;
-
-DROP TABLE answer;
-ALTER TABLE answer_new RENAME TO answer;
+CREATE UNIQUE INDEX IF NOT EXISTS answer_item_question ON answer (user_id, item_id, question_id);

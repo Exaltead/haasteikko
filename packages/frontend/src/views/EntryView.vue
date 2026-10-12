@@ -2,6 +2,7 @@
 import { useChallengeApi } from '@/api/challengeApiClient';
 import { useLibraryApi } from '@/api/libraryApiClient';
 import { useEventApi } from '@/api/eventApiClient';
+import { useAnswerApi } from '@/api/answerApiClient';
 import EntryBasics from '@/components/Entry/EntryBasics.vue';
 import EntryEvent from '@/components/Entry/EntryEvent.vue';
 import NewEventModal from '@/components/Entry/NewEventModal.vue';
@@ -10,7 +11,8 @@ import BrandedButton from '@/components/Basics/BrandedButton.vue';
 import TabNavigation from '@/components/Basics/TabNavigation.vue';
 import ResponsiveCardWrapper from '@/components/Basics/ResponsiveCardWrapper.vue';
 import EmptyState from '@/components/Basics/EmptyState.vue';
-import type { Challenge } from '@/models/challenge';
+import { useGoBack } from '@/composables/useGoBack';
+import type { Answer, Challenge } from '@/models/challenge';
 import type { LibraryItem } from '@/models/LibraryItem';
 import type { Event } from '@/models/Event';
 import { computed, ref, watch } from 'vue';
@@ -20,10 +22,12 @@ import { z } from 'zod';
 const libraryApi = useLibraryApi()
 const challengeApiClient = useChallengeApi()
 const eventApi = useEventApi()
+const answerApi = useAnswerApi()
 
 const route = useRoute()
 
 const router = useRouter()
+const goBack = useGoBack()
 
 function toLibrary() {
   router.push({ name: "home" })
@@ -32,11 +36,13 @@ function toLibrary() {
 const challenges = ref<Challenge[]>([])
 const item = ref<LibraryItem | undefined>(undefined)
 const events = ref<Event[]>([])
+const answers = ref<Answer[]>([])
 
 // Set by NewEntryView's redirect right after creating an item + its auto-linked event, so the
 // Events tab can open pre-expanded on that event without any extra clicks. One-time navigation
 // state only - not meant to survive a refresh or be shareable. Also updated after manually
-// creating an event via NewEventModal, so that event opens pre-expanded too.
+// creating an event via NewEventModal, so that event opens pre-expanded too, and whenever an event
+// is expanded, so navigating back from a challenge answer page reopens it.
 const expandEventId = ref<string | undefined>(
   (history.state as { expandEventId?: string } | null)?.expandEventId,
 )
@@ -54,8 +60,13 @@ async function getEvents() {
   events.value = await eventApi.fetchEventsForItem(itemId)
 }
 
+async function getAnswers() {
+  const itemId = z.string().parse(route.params.id)
+  answers.value = await answerApi.searchAnswers({ itemId })
+}
+
 async function fetchData() {
-  await Promise.all([getChallenges(), getItem(), getEvents()])
+  await Promise.all([getChallenges(), getItem(), getEvents(), getAnswers()])
 }
 
 
@@ -81,6 +92,15 @@ async function onEventCreated(eventId: string) {
   await getEvents()
 }
 
+function onEventExpandedChanged(eventId: string, expanded: boolean) {
+  if (expanded) {
+    expandEventId.value = eventId
+  } else if (expandEventId.value === eventId) {
+    expandEventId.value = undefined
+  }
+  history.replaceState({ ...history.state, expandEventId: expandEventId.value }, "")
+}
+
 const sortedEvents = computed(() => {
   return [...events.value].sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
@@ -99,7 +119,7 @@ const sortedEvents = computed(() => {
         <div class="flex flex-col w-full">
           <div
             class="flex items-center justify-between w-full p-2 md:px-6 md:py-4 border-b border-brand-orange bg-white sticky top-0 z-10">
-            <BrandedButton :onClick="router.back" icon="Back" variant="primary" class="ml-2 md:ml-0"
+            <BrandedButton :onClick="() => goBack({ name: 'library' })" icon="Back" variant="primary" class="ml-2 md:ml-0"
               data-testid="back-button" />
             <div class="flex items-center gap-2">
               <BaseIcon :name="item.kind" class="w-6 h-6 md:w-8 md:h-8 text-brand-orange/70" />
@@ -126,8 +146,10 @@ const sortedEvents = computed(() => {
                   :event="event"
                   :item="item"
                   :challenges="challenges"
+                  :answers="answers"
                   :initially-expanded="event.id === expandEventId"
                   @event-updated="getEvents"
+                  @expanded-changed="(expanded: boolean) => onEventExpandedChanged(event.id, expanded)"
                 />
                 <BrandedButton
                   text="Lisää uusi tapahtuma"

@@ -2,30 +2,32 @@
 import { computed, ref, watch } from 'vue'
 import type { Event } from '@/models/Event'
 import type { LibraryItem } from '@/models/LibraryItem'
-import type { Challenge } from '@/models/challenge'
+import type { Answer, Challenge } from '@/models/challenge'
 import { useEventApi } from '@/api/eventApiClient'
 import DatePicker from '@/components/Basics/DatePicker.vue'
 import ManagementList from '@/components/Basics/ManagementList.vue'
-import EntryChallenge from '@/components/Entry/EntryChallenge.vue'
-import { TabGroup, TabList, TabPanel, TabPanels, Tab } from '@headlessui/vue'
+import ChallengeAnswerCard from '@/components/Entry/ChallengeAnswerCard.vue'
 
 const eventApi = useEventApi()
 
-const { event, item, challenges, initiallyExpanded } = defineProps<{
+const { event, item, challenges, answers, initiallyExpanded } = defineProps<{
   event: Event
   item: LibraryItem
   challenges: Challenge[]
+  answers: Answer[]
   initiallyExpanded?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: "eventUpdated"): void
+  (e: "expandedChanged", expanded: boolean): void
 }>()
 
 const isExpanded = ref(initiallyExpanded ?? false)
 
 function toggleExpanded() {
   isExpanded.value = !isExpanded.value
+  emit("expandedChanged", isExpanded.value)
 }
 
 const completedAt = ref(new Date(event.completedAt))
@@ -108,26 +110,15 @@ watch(completedAt, () => {
         @stateChanged="onChallengeStateChanged"
       />
 
-      <TabGroup v-if="linkedChallenges.length > 0">
-        <TabList class="flex flex-row gap-6">
-          <Tab v-for="challenge in linkedChallenges" :key="challenge.id" v-slot="{ selected }">
-            <button
-              :class="
-                selected
-                  ? 'bg-brand-primary text-white'
-                  : 'bg-white text-brand-primary hover:bg-brand-primary hover:text-white'
-              "
-            >
-              <span>{{ challenge.name }}</span>
-            </button>
-          </Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel v-for="challenge in linkedChallenges" :key="challenge.id">
-            <EntryChallenge :eventId="event.id" :challengeId="challenge.id" />
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
+      <div v-if="linkedChallenges.length > 0" class="grid grid-cols-1 gap-2 md:grid-cols-2">
+        <ChallengeAnswerCard
+          v-for="challenge in linkedChallenges"
+          :key="challenge.id"
+          :challenge="challenge"
+          :item-id="item.id"
+          :answers="answers"
+        />
+      </div>
     </div>
   </div>
 </template>

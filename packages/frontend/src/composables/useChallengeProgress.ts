@@ -21,6 +21,13 @@ export function getCompletedCount(challenge: Challenge, answers: Answer[]): numb
   return questionsWithAnswers.size
 }
 
+export function getAnsweredCount(challenge: Challenge, answers: Answer[]): number {
+  const questionIds = new Set(challenge.questions.map((q) => q.id))
+  return new Set(
+    answers.filter((a) => a.answered && questionIds.has(a.questionId)).map((a) => a.questionId),
+  ).size
+}
+
 export function getTotalCount(challenge: Challenge): number {
   return challenge.questions.length
 }

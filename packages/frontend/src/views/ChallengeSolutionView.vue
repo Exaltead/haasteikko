@@ -178,12 +178,8 @@ function getQuestionAnswers(question: Question): Answer[] {
 
     if (questionSolution.multipleAnswerItemIds[0] !== "") {
       const targetItemId = questionSolution.multipleAnswerItemIds[0]
-      const matchingEventIds = new Set(
-        allEvents.value.filter(e => e.itemId === targetItemId).map(e => e.id),
-      )
       const answered = allAnswers.value
-        .find(t => matchingEventIds.has(t.eventId)
-          && t.questionId === question.id)
+        .find(t => t.itemId === targetItemId && t.questionId === question.id)
 
       if (answered === undefined) {
         return []
@@ -241,8 +237,7 @@ const questionToAnswersMap = computed(() => {
   const mapping = questions.value.map((question) => {
     const answers = getQuestionAnswers(question)
       .map(answer => {
-        const event = allEvents.value.find(e => e.id === answer.eventId)
-        const item = event ? allItems.value.find(t2 => t2.id === event.itemId) : undefined
+        const item = allItems.value.find(t2 => t2.id === answer.itemId)
         if (item === undefined) {
           return undefined
         }

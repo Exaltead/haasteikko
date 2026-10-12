@@ -25,7 +25,7 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
         let tx = self.transaction()?;
 
         let insert_count = tx.execute::<&[&dyn rusqlite::ToSql]>(
-            "INSERT INTO answer (id,  question_id, challenge_id, user_id, answered, answer, kind, event_id)
+            "INSERT INTO answer (id,  question_id, challenge_id, user_id, answered, answer, kind, item_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             &[
                 &answer.id,
@@ -35,7 +35,7 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
                 &(if answer.answered { 1i64 } else { 0i64 }),
                 &answer.answer,
                 &answer.kind,
-                &answer.event_id,
+                &answer.item_id,
             ],
         )?;
 
@@ -48,7 +48,7 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
     }
 
     fn read_by_id(&mut self, id: &str) -> Result<Option<Answer>> {
-        let sql = "SELECT id, question_id, challenge_id, user_id, answered, answer, kind, event_id
+        let sql = "SELECT id, question_id, challenge_id, user_id, answered, answer, kind, item_id
             FROM answer
             WHERE id = ?";
         let connection = self.conn();
@@ -61,7 +61,7 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
     fn search(&mut self, filter: AnswerFilter) -> Result<Vec<Answer>> {
         let (conditions, params) = to_sql_params(&filter);
         let sql = format!(
-            "SELECT id, question_id, challenge_id, user_id, answered, answer, kind, event_id
+            "SELECT id, question_id, challenge_id, user_id, answered, answer, kind, item_id
              FROM answer
              WHERE {}
              ORDER BY id",
@@ -74,7 +74,7 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
 
     fn update(&mut self, id: &str, item: &Answer) -> Result<bool> {
         let sql = "UPDATE answer
-            SET question_id = ?, challenge_id = ?, user_id = ?, answered = ?, answer = ?, kind = ?, event_id = ?
+            SET question_id = ?, challenge_id = ?, user_id = ?, answered = ?, answer = ?, kind = ?, item_id = ?
             WHERE id = ?";
 
         let tx = self.transaction()?;
@@ -87,7 +87,7 @@ impl Repository<Answer, super::domain::AnswerFilter<'_>> for ChallengeAnswerRepo
                 &(if item.answered { 1i64 } else { 0i64 }),
                 &item.answer,
                 &item.kind,
-                &item.event_id,
+                &item.item_id,
                 &id,
             ],
         )?;
@@ -120,7 +120,7 @@ fn row_to_answer(row: &rusqlite::Row) -> Result<Answer> {
         answered: row.get::<_, i64>(4)? != 0,
         answer: row.get(5)?,
         kind: row.get(6)?,
-        event_id: row.get(7)?,
+        item_id: row.get(7)?,
     })
 }
 
@@ -131,14 +131,22 @@ fn to_sql_params<'a>(filter: &'a AnswerFilter) -> (String, Vec<&'a dyn rusqlite:
     params.push(&filter.user_id);
     conditions.push("user_id = ?");
 
-    if let Some(event_id) = &filter.event_id {
-        conditions.push("event_id = ?");
-        params.push(event_id);
+    if let Some(item_id) = &filter.item_id {
+        conditions.push("item_id = ?");
+        params.push(item_id);
     }
 
     if let Some(challenge_id) = &filter.challenge_id {
         conditions.push("challenge_id = ?");
         params.push(challenge_id);
+    }
+
+    if filter.only_linked {
+        conditions.push(
+            "EXISTS (SELECT 1 FROM event e
+                JOIN event_challenge ec ON ec.event_id = e.id
+                WHERE e.item_id = answer.item_id AND ec.challenge_id = answer.challenge_id)",
+        );
     }
 
     let conditions = conditions.join(" AND ");

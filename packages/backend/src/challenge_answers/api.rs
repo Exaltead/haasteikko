@@ -19,7 +19,7 @@ use crate::{
 
 pub fn routes() -> Router<AppState> {
     Router::new().route("/answers", get(search_answers)).route(
-        "/answers/{eventId}/{challengeId}",
+        "/answers/{itemId}/{challengeId}",
         post(upsert_answers_route),
     )
 }
@@ -27,7 +27,7 @@ pub fn routes() -> Router<AppState> {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct AnswersQuery {
-    event_id: Option<String>,
+    item_id: Option<String>,
     challenge_id: Option<String>,
 }
 
@@ -39,7 +39,7 @@ struct ApiAnswer {
     pub question_id: String,
     pub answered: bool,
     pub answer: String,
-    pub event_id: String,
+    pub item_id: String,
 }
 
 impl ApiAnswer {
@@ -50,11 +50,11 @@ impl ApiAnswer {
             kind: answer.kind.clone(),
             answered: answer.answered,
             answer: answer.answer.clone(),
-            event_id: answer.event_id.clone(),
+            item_id: answer.item_id.clone(),
         }
     }
 
-    fn to_domain(&self, user_id: &str, event_id: &Uuid, challenge_id: &Uuid) -> Answer {
+    fn to_domain(&self, user_id: &str, item_id: &Uuid, challenge_id: &Uuid) -> Answer {
         Answer {
             id: self.id.clone().unwrap_or(Uuid::new_v4().to_string()),
             question_id: self.question_id.clone(),
@@ -63,7 +63,7 @@ impl ApiAnswer {
             kind: self.kind.clone(),
             answered: self.answered,
             answer: self.answer.clone(),
-            event_id: event_id.to_string(),
+            item_id: item_id.to_string(),
         }
     }
 }
@@ -81,8 +81,11 @@ async fn search_answers(
 ) -> Result<Json<AnswersList>, StatusCode> {
     let filter = AnswerFilter {
         user_id: &user.id,
-        event_id: query.event_id.as_deref(),
+        item_id: query.item_id.as_deref(),
         challenge_id: query.challenge_id.as_deref(),
+        // Challenge-wide queries feed progress and solutions, which must not count answers of
+        // items whose events no longer link the challenge. Item-scoped queries return everything.
+        only_linked: query.item_id.is_none(),
     };
     let answers = get_challenge_answers(&state.database_path, filter)
         .map_err(|err| map_to_internal_error(Box::new(err)))?;
@@ -96,18 +99,18 @@ async fn search_answers(
 async fn upsert_answers_route(
     user: User,
     State(state): State<AppState>,
-    Path((event_id, challenge_id)): Path<(Uuid, Uuid)>,
+    Path((item_id, challenge_id)): Path<(Uuid, Uuid)>,
     Json(answer_list): Json<AnswersList>,
 ) -> Result<Json<AnswersList>, StatusCode> {
     let domain_awnsers: Vec<Answer> = answer_list
         .answers
         .iter()
-        .map(|a| a.to_domain(&user.id, &event_id, &challenge_id))
+        .map(|a| a.to_domain(&user.id, &item_id, &challenge_id))
         .collect();
     let answers = upsert_answers(
         &user,
         &state,
-        &event_id.to_string(),
+        &item_id.to_string(),
         &challenge_id.to_string(),
         &domain_awnsers,
     )

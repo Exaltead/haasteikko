@@ -7,7 +7,7 @@ import z from "zod"
 class AnswerApiClient {
   constructor(private proxy: HttpProxy) {}
 
-  async searchAnswers(query: { challengeId?: string; eventId?: string }): Promise<Answer[]> {
+  async searchAnswers(query: { challengeId?: string; itemId?: string }): Promise<Answer[]> {
     const params = buildSearchParams(query)
 
     const res = await this.proxy.get(
@@ -19,9 +19,9 @@ class AnswerApiClient {
     return res.answers
   }
 
-  async upsertAnswers(answers: Answer[], challengeId: string, eventId: string): Promise<Answer[]> {
+  async upsertAnswers(answers: Answer[], challengeId: string, itemId: string): Promise<Answer[]> {
     const result = await this.proxy.post(
-      `${API_URL}/answers/${eventId}/${challengeId}`,
+      `${API_URL}/answers/${itemId}/${challengeId}`,
       { answers },
       z.object({ answers: answerSchema.array() }),
     )

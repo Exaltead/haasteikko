@@ -54,14 +54,15 @@ test("User can create a challenge, add a book, answer a question, and verify res
   // After saving, we're redirected to the entry view /library/:id
   await expect(authenticatedPage).toHaveURL(/library\/[a-f0-9-]+/)
 
-  // Step 4 — Answer the challenge question on the entry page
-  // The challenge tab should be visible (backend auto-links new books to active Book challenges)
-  // Use getByRole("tab") to target the HeadlessUI Tab specifically (challenge name also appears as <h1>)
-  const challengeTab = authenticatedPage.getByRole("tab", { name: challengeName })
-  await expect(challengeTab).toBeVisible()
-  await challengeTab.click()
+  // Step 4 — Answer the challenge question on its own page
+  // The new item's auto-created event opens pre-expanded and links the active Book challenge
+  // (backend auto-links new books), shown as a clickable card.
+  const challengeCard = authenticatedPage.getByRole("link", { name: challengeName })
+  await expect(challengeCard).toBeVisible()
+  await expect(challengeCard).toContainText("0 / 1 vastattu")
+  await challengeCard.click()
 
-  // The EntryChallenge component renders a RadioGroup for the Boolean question
+  await expect(authenticatedPage).toHaveURL(/library\/[a-f0-9-]+\/challenges\/[a-f0-9-]+/)
   await expect(authenticatedPage.getByText(questionText)).toBeVisible()
 
   // Click "Kyllä" (Yes) to answer.
@@ -71,6 +72,30 @@ test("User can create a challenge, add a book, answer a question, and verify res
   )
   await authenticatedPage.getByText("Kyllä").click()
   await answerSaved
+  await expect(authenticatedPage.getByText("1 / 1 vastattu")).toBeVisible()
+
+  // Back on the entry page the event is still expanded and its card reflects the answer
+  await authenticatedPage.getByTestId("back-button").click()
+  await expect(challengeCard).toContainText("1 / 1 vastattu")
+
+  // A second event linking the same challenge shares the item's single answer set
+  await authenticatedPage.getByRole("button", { name: "Lisää uusi tapahtuma" }).click()
+  await authenticatedPage.getByRole("button", { name: "Tallenna" }).click()
+  await expect(challengeCard).toHaveCount(2)
+  for (const card of await challengeCard.all()) {
+    await expect(card).toContainText("1 / 1 vastattu")
+  }
+  await challengeCard.last().click()
+  await expect(authenticatedPage.getByRole("radio", { name: "Kyllä" })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  )
+
+  // Going back leads answer page → item → library; the creation form isn't in the history
+  await authenticatedPage.goBack()
+  await expect(authenticatedPage).toHaveURL(/library\/[a-f0-9-]+$/)
+  await authenticatedPage.getByTestId("back-button").click()
+  await expect(authenticatedPage).toHaveURL(/\/library$/)
 
   // Step 5 — Verify the library listing page
   await authenticatedPage.goto("/library")

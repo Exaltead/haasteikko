@@ -151,7 +151,8 @@ async function submitForm(): Promise<void> {
   })
 
   isSubmitting.value = false
-  router.push({ name: "libraryItem", params: { id: newId }, state: { expandEventId: newEventId } })
+  // Replace the form's history entry, so going back from the new item doesn't reopen the form
+  router.replace({ name: "libraryItem", params: { id: newId }, state: { expandEventId: newEventId } })
 }
 
 const kinds = [
