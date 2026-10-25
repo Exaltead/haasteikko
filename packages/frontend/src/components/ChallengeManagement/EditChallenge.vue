@@ -2,7 +2,6 @@
 import type { Challenge, Question } from '@/models/challenge';
 import { computed, ref } from 'vue';
 import TextInput from '../Basics/TextInput.vue';
-import { v4 } from 'uuid';
 import BaseIcon from "@/components/Icons/BaseIcon.vue"
 import BrandedButton from '../Basics/BrandedButton.vue';
 import { useChallengeApi } from '@/api/challengeApiClient';
@@ -46,7 +45,7 @@ const activeCheckBox = ref(editTarget.value.status === "active")
 function addNewQuestion() {
   const newQuestion: Question = {
     kind: "Boolean",
-    id: v4(),
+    id: crypto.randomUUID(),
     question: "",
     number: editTarget.value.questions.length,
     questionClusterSize: 1,

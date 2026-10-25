@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite"
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.stories.ts"],
-  addons: ["@chromatic-com/storybook", "@storybook/addon-vitest"],
+  addons: ["@storybook/addon-vitest"],
   framework: {
     name: "@storybook/vue3-vite",
     options: {

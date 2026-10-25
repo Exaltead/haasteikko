@@ -6,7 +6,6 @@ edition = { workspace = true }
 [dependencies]
 axum = { workspace = true }
 rusqlite = { workspace = true }
-dotenv = { workspace = true }
 tokio = { workspace = true }
 jsonwebtoken = { version = "11.1.0", features = ["rust_crypto"] }
 serde = { version = "1.0", features = ["derive"] }
