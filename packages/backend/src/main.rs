@@ -19,9 +19,45 @@ struct AppState {
     database_path: String,
 }
 
-#[tokio::main]
-async fn main() {
-    dotenv::dotenv().ok();
+fn main() {
+    // Must run before the Tokio runtime starts: set_var is only sound single-threaded.
+    load_dotenv();
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to build Tokio runtime")
+        .block_on(run());
+}
+
+/// Loads `KEY=VALUE` lines from `.env` (local dev only; prod uses systemd's EnvironmentFile).
+/// Variables that are already set are not overridden.
+fn load_dotenv() {
+    let Ok(contents) = std::fs::read_to_string(".env") else {
+        return;
+    };
+    for line in contents.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let key = key.trim().trim_start_matches("export ").trim();
+        let value = value.trim();
+        let value = value
+            .strip_prefix('"')
+            .and_then(|v| v.strip_suffix('"'))
+            .or_else(|| value.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')))
+            .unwrap_or(value);
+        if std::env::var_os(key).is_none() {
+            // SAFETY: called from main before any other threads are spawned.
+            unsafe { std::env::set_var(key, value) };
+        }
+    }
+}
+
+async fn run() {
     let database_path =
         std::env::var("DATABASE_PATH").unwrap_or_else(|_| "database.sqlite".to_string());
 

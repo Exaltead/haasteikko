@@ -2,7 +2,6 @@
 
 import type { Answer, Challenge, QuestionType } from "@/models/challenge";
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from "@headlessui/vue"
-import { v4 } from "uuid";
 import { computed, ref, watch } from "vue";
 
 import { useAnswerApi } from "@/api/answerApiClient";
@@ -40,7 +39,7 @@ async function refreshData(): Promise<void> {
     if (answers.find(t => t.questionId === question.id)) {
       continue
     }
-    const id = v4()
+    const id = crypto.randomUUID()
     if (question.kind === "TextInput") {
       newMap.set(id, {
         kind: "TextInput",

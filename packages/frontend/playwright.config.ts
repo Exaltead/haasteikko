@@ -1,17 +1,17 @@
 import { defineConfig, devices } from "@playwright/test"
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-import dotenv from "dotenv"
+import { existsSync } from "fs"
 import path, { dirname } from "path"
 import { fileURLToPath } from "url"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// Load test environment for E2E tests
-dotenv.config({ path: [path.resolve(__dirname, ".env.test"), path.resolve(__dirname, ".env")] })
+// Load test environment for E2E tests. Already-set variables are not overridden, so
+// .env.test takes precedence over .env.
+for (const file of [".env.test", ".env"]) {
+  const envPath = path.resolve(__dirname, file)
+  if (existsSync(envPath)) process.loadEnvFile(envPath)
+}
 
 /**
  * See https://playwright.dev/docs/test-configuration.
