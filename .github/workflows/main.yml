@@ -98,12 +98,17 @@ jobs:
       - name: Create SSH key
         env:
           VM_SSH_SECRET: ${{ secrets.VM_SSH_SECRET }}
-          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
         run: |
+          # Pinned host key: a server presenting any other key fails the deploy
+          if [ -z "$VM_KNOWN_HOSTS" ]; then
+            echo "ERROR: VM_KNOWN_HOSTS secret is not set"
+            exit 1
+          fi
           mkdir -p ~/.ssh
           echo "$VM_SSH_SECRET" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts || true
+          echo "$VM_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
       - name: Verify deployment artifacts
         run: |
