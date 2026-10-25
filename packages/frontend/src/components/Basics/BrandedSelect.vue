@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const model = defineModel()
 const { options, disabled } = defineProps<{
-  options: { name: string; value: unknown }[]
+  options: { name: string; value: unknown; class?: string }[]
   title?: string
   disabled?: boolean
 }>()
@@ -13,7 +13,7 @@ const { options, disabled } = defineProps<{
   <div class="flex flex-row gap-4 items-center">
     <label v-if="title" for="select" class="font-bold">{{ title }}</label>
     <select id="select" v-model="model" :disabled="disabled" class="rounded border-brand-primary border-1 px-2 py-1 bg-light-gray disabled:opacity-50 disabled:cursor-not-allowed">
-      <option v-for="option in options" :key="option.name" :value="option.value">
+      <option v-for="option in options" :key="option.name" :value="option.value" :class="option.class">
         {{ option.name }}
       </option>
     </select>

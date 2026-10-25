@@ -132,7 +132,7 @@ test("User can create a challenge, add a book, answer a question, and verify res
   const solutionSaved = authenticatedPage.waitForResponse(
     (res) => res.url().includes("/solution/") && res.request().method() === "POST",
   )
-  await authenticatedPage.locator("select").selectOption({ label: bookName })
+  await authenticatedPage.locator("select").selectOption({ label: `✓✓ ${bookName} · 0/1` })
   await solutionSaved
 
   await authenticatedPage.goto("/home")
