@@ -52,12 +52,44 @@ test("Text question with cluster size 1 can be given a solution", async ({ authe
   const solutionSaved = authenticatedPage.waitForResponse(
     (res) => res.url().includes("/solution/") && res.request().method() === "POST",
   )
-  await picker.selectOption({ label: bookName })
+  // Unused item that fits one question: unique, used 0 / possible 1
+  await picker.selectOption({ label: `✓✓ ${bookName} · 0/1` })
   await solutionSaved
+  // The picked option shows just the title, and the empty option turns into a clear action
+  await expect(picker.locator("option:checked")).toHaveText(bookName)
+  await expect(picker.locator("option").first()).toHaveText("— Tyhjennä —")
 
   // The choice survives a reload and counts as solved
   await authenticatedPage.reload()
   await expect(authenticatedPage.getByRole("combobox")).toHaveValue(/[a-f0-9-]{36}/)
   await authenticatedPage.goto("/home")
   await expect(homeCard.getByText("1 ratkaistu")).toBeVisible()
+  await homeCard.click()
+
+  // Clearing the single question from its dropdown removes the solution
+  const cleared = authenticatedPage.waitForResponse(
+    (res) => res.url().includes("/solution/") && res.request().method() === "POST",
+  )
+  await authenticatedPage.getByRole("combobox").selectOption({ label: "— Tyhjennä —" })
+  await cleared
+  await authenticatedPage.reload()
+  await expect(authenticatedPage.getByRole("combobox")).toHaveValue("")
+  await expect(authenticatedPage.locator("option:checked")).toHaveText("— Ei ratkaisua —")
+
+  // Pick again, then reset the whole solution through the confirm dialog
+  const repicked = authenticatedPage.waitForResponse(
+    (res) => res.url().includes("/solution/") && res.request().method() === "POST",
+  )
+  await authenticatedPage.getByRole("combobox").selectOption({ label: `✓✓ ${bookName} · 0/1` })
+  await repicked
+  const reset = authenticatedPage.waitForResponse(
+    (res) => res.url().includes("/solution/") && res.request().method() === "POST",
+  )
+  await authenticatedPage.getByRole("button", { name: "Tyhjennä ratkaisu" }).click()
+  await authenticatedPage.getByRole("button", { name: "Tyhjennä", exact: true }).click()
+  await reset
+  await authenticatedPage.reload()
+  await expect(authenticatedPage.getByRole("combobox")).toHaveValue("")
+  await authenticatedPage.goto("/home")
+  await expect(homeCard.getByText("0 ratkaistu")).toBeVisible()
 })

@@ -6,6 +6,7 @@ import { useEventApi } from '@/api/eventApiClient';
 
 import { useSolutionsApi } from '@/api/solutionsApiClient';
 import BrandedButton from '@/components/Basics/BrandedButton.vue';
+import PopupModal from '@/components/Basics/PopupModal.vue';
 import LibraryItemCard from '@/components/EntryListing/LibraryItemCard.vue';
 import TabNavigation from '@/components/Basics/TabNavigation.vue'
 import ResponsiveCardWrapper from '@/components/Basics/ResponsiveCardWrapper.vue'
@@ -42,6 +43,15 @@ function solutionKindFor(question: Question): Solution["kind"] {
   return question.kind === "TextInput" ? "MultiPartSolution" : "SinglePartSolution"
 }
 
+function emptySolutionFor(question: Question): Solution {
+  return {
+    kind: solutionKindFor(question),
+    questionId: question.id,
+    singleAnswerItemId: "",
+    multipleAnswerItemIds: [...Array(question.questionClusterSize).keys()].map(() => "")
+  }
+}
+
 async function getSolution(): Promise<Solution[]> {
   const challengeId = route.params.id as string
   const serverSolutions = await solutionsApiClient.searchSolutions({ challengeId: challengeId })
@@ -51,12 +61,7 @@ async function getSolution(): Promise<Solution[]> {
   for (const question of questions.value) {
     const existingSolution = serverSolutions.find(t => t.questionId === question.id)
     if (existingSolution === undefined) {
-      result.push({
-        kind: solutionKindFor(question),
-        questionId: question.id,
-        singleAnswerItemId: "",
-        multipleAnswerItemIds: [...Array(question.questionClusterSize).keys()].map(() => "")
-      })
+      result.push(emptySolutionFor(question))
     } else {
       if (question.kind === "TextInput" && existingSolution.multipleAnswerItemIds.length !== question.questionClusterSize) {
         existingSolution.multipleAnswerItemIds = [...Array(question.questionClusterSize).keys()].map(() => "")
@@ -160,7 +165,8 @@ watch(solution, async (newValue) => {
 
 
 
-function getQuestionAnswers(question: Question): Answer[] {
+// Answers that could be a solution to the question, regardless of what is currently picked
+function getEligibleAnswers(question: Question): Answer[] {
   if (question.kind === "Boolean") {
     return allAnswers.value.filter((answer) => answer.questionId === question.id
       && answer.kind === "Boolean" && answer.answer === "yes")
@@ -170,12 +176,6 @@ function getQuestionAnswers(question: Question): Answer[] {
     const options = allAnswers.value.filter((answer) => answer.questionId === question.id
       && answer.kind === "TextInput" && answer.answer !== "")
 
-    const questionSolution = getSolutionForQuestion(question.id)
-    if (questionSolution === undefined) {
-      return []
-    }
-
-
     const clusterSize = question.questionClusterSize
 
     const uniqueAnswers = [... new Set<string>(options.map(t => t.answer))]
@@ -184,8 +184,19 @@ function getQuestionAnswers(question: Question): Answer[] {
         return count >= clusterSize
       })
 
+    return options.filter(t => uniqueAnswers.includes(t.answer))
+  }
 
-    const trueOptions = options.filter(t => uniqueAnswers.includes(t.answer))
+  return []
+}
+
+function getQuestionAnswers(question: Question): Answer[] {
+  const trueOptions = getEligibleAnswers(question)
+  if (question.kind === "TextInput") {
+    const questionSolution = getSolutionForQuestion(question.id)
+    if (questionSolution === undefined) {
+      return []
+    }
 
     if (questionSolution.multipleAnswerItemIds[0] !== "") {
       const targetItemId = questionSolution.multipleAnswerItemIds[0]
@@ -197,11 +208,51 @@ function getQuestionAnswers(question: Question): Answer[] {
       }
       return trueOptions.filter(t => t.answer === answered.answer)
     }
-
-    return trueOptions
   }
 
-  return []
+  return trueOptions
+}
+
+// Item id -> ids of the questions that currently use the item in their solution
+const itemUsage = computed(() => {
+  const usage = new Map<string, Set<string>>()
+  for (const s of solution.value) {
+    const itemIds = [s.singleAnswerItemId, ...s.multipleAnswerItemIds]
+      .filter((id): id is string => !!id)
+    for (const itemId of itemIds) {
+      const questionIds = usage.get(itemId) ?? new Set<string>()
+      questionIds.add(s.questionId)
+      usage.set(itemId, questionIds)
+    }
+  }
+  return usage
+})
+
+// Item id -> number of questions the item could be a solution to
+const itemEligibility = computed(() => {
+  const eligibility = new Map<string, number>()
+  for (const question of questions.value) {
+    const itemIds = new Set(getEligibleAnswers(question).map(t => t.itemId))
+    for (const itemId of itemIds) {
+      eligibility.set(itemId, (eligibility.get(itemId) ?? 0) + 1)
+    }
+  }
+  return eligibility
+})
+
+type SolutionOption = { name: string, title: string, value: string, class: string, possible: number }
+
+function toSolutionOption(item: LibraryItem, questionId: string): SolutionOption {
+  const usedBy = itemUsage.value.get(item.id) ?? new Set<string>()
+  const usedElsewhere = [...usedBy].some(t => t !== questionId)
+  const possible = itemEligibility.value.get(item.id) ?? 0
+  return {
+    name: `${usedElsewhere ? "✓" : "✓✓"} ${item.title} · ${usedBy.size}/${possible}`,
+    title: item.title,
+    value: item.id,
+    class: "text-brand-green",
+    possible,
+  }
 }
 
 type QuestionStatus = 'warning' | 'selected' | 'unique' | null
@@ -252,12 +303,12 @@ const questionToAnswersMap = computed(() => {
         if (item === undefined) {
           return undefined
         }
-        return {
-          name: item.title,
-          value: item.id
-        }
+        return { item, option: toSolutionOption(item, question.id) }
       })
-      .filter((t): t is { name: string, value: string } => t !== undefined)
+      .filter((t) => t !== undefined)
+      // Items that fit only a few questions first, as those are the hardest to place elsewhere
+      .sort((a, b) => a.option.possible - b.option.possible || a.item.title.localeCompare(b.item.title))
+      .map(({ option }) => option)
     return {
       question,
       options: answers,
@@ -334,6 +385,14 @@ function updateSolutionForQuestion(questionId: string, newValue: string | string
   }
 }
 
+const hasAnySelection = computed(() => itemUsage.value.size > 0)
+const showResetConfirm = ref(false)
+
+function resetSolution() {
+  showResetConfirm.value = false
+  solution.value = questions.value.map(emptySolutionFor)
+}
+
 </script>
 
 
@@ -358,6 +417,12 @@ function updateSolutionForQuestion(questionId: string, newValue: string | string
           <TabNavigation tab1Label="Ratkaisu" :tab2Label="`Kirjastoni (${challengeLibraryItems.length})`">
             <template #tab1>
               <div class="overflow-hidden w-full max-w-[84rem] mx-auto px-2 md:px-0 py-4">
+                <div class="flex items-center justify-between gap-2 px-2 pb-2">
+                  <p class="text-xs text-gray-500">✓✓ vapaa · ✓ käytössä muualla · 1/3 = käytössä / sopii</p>
+                  <BrandedButton variant="secondary" icon="Delete" text="Tyhjennä ratkaisu"
+                    :disabled="!hasAnySelection || savingQuestionId !== null"
+                    :onClick="() => showResetConfirm = true" />
+                </div>
                 <ul class="flex flex-col w-full">
                   <QuestionSolutionItem v-for="{ question, options, status }, i in questionToAnswersMap"
                     :key="question.id" :question="question" :options="options" :status="status"
@@ -383,6 +448,15 @@ function updateSolutionForQuestion(questionId: string, newValue: string | string
         </div>
       </ResponsiveCardWrapper>
     </div>
+    <PopupModal :showModal="showResetConfirm">
+      <div class="flex flex-col gap-4 p-4">
+        <p>Tyhjennetäänkö koko ratkaisu?</p>
+        <div class="flex justify-end gap-2">
+          <BrandedButton variant="secondary" text="Peruuta" :onClick="() => showResetConfirm = false" />
+          <BrandedButton variant="primary" text="Tyhjennä" :onClick="resetSolution" />
+        </div>
+      </div>
+    </PopupModal>
   </div>
 
 </template>

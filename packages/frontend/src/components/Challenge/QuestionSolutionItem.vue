@@ -8,18 +8,40 @@ type QuestionStatus = 'warning' | 'selected' | 'unique' | null
 
 interface QuestionSolutionItemProps {
   question: Question
-  options: { name: string, value: string }[]
+  options: { name: string, title: string, value: string, class?: string }[]
   status: QuestionStatus
   modelValue: string | string[]
   saving: boolean
   questionIndex: number
 }
 
-defineProps<QuestionSolutionItemProps>()
+const props = defineProps<QuestionSolutionItemProps>()
 const emit = defineEmits(['update:modelValue'])
+
+// The empty option reads as a placeholder when nothing is picked, and as a clear action otherwise.
+// The usage marks only help while choosing, so the picked option shows just its title.
+function selectOptionsFor(value: string) {
+  const emptyOption = { name: value === "" ? "— Ei ratkaisua —" : "— Tyhjennä —", value: "" }
+  return [
+    emptyOption,
+    ...props.options.map(option => option.value === value
+      ? { name: option.title, value: option.value }
+      : option),
+  ]
+}
 
 function handleSelectUpdate(value: string | string[]) {
   emit('update:modelValue', value)
+}
+
+function handlePartUpdate(index: number, value: string) {
+  const parts = props.modelValue as string[]
+  // Later parts are hidden once the first part is cleared, so clear them too
+  if (index === 0 && value === "") {
+    handleSelectUpdate(parts.map(() => ""))
+    return
+  }
+  handleSelectUpdate(parts.map((v, i) => i === index ? value : v))
 }
 </script>
 
@@ -31,7 +53,7 @@ function handleSelectUpdate(value: string | string[]) {
         <StatusIcon :status="status" />
         <div class="flex items-center gap-2">
           <span v-if="saving" class="loading-spinner"></span>
-          <BrandedSelect v-if="options.length > 0" :options="options"
+          <BrandedSelect v-if="options.length > 0" :options="selectOptionsFor(modelValue as string)"
             :model-value="modelValue" 
             @update:model-value="handleSelectUpdate"
             :disabled="saving" />
@@ -50,9 +72,9 @@ function handleSelectUpdate(value: string | string[]) {
             <div v-if="index === 0 || (modelValue as string[])[0] !== ''"
               class="flex items-center gap-2">
               <span v-if="saving" class="loading-spinner"></span>
-              <BrandedSelect :options="options"
+              <BrandedSelect :options="selectOptionsFor((modelValue as string[])[index] ?? '')"
                 :model-value="(modelValue as string[])[index]"
-                @update:model-value="(val) => handleSelectUpdate((modelValue as string[]).map((v, i) => i === index ? val : v))"
+                @update:model-value="(val) => handlePartUpdate(index, val as string)"
                 :title="`Osa ${index + 1}`"
                 :disabled="saving" />
             </div>
