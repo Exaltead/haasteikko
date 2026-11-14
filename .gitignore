@@ -54,6 +54,9 @@ prod-deploy.sh
 storybook-static/
 *storybook.log
 
+# Sandbox (nono): project-local npm/cargo caches
+/.cache/
+
 # Python
 venv/
 __pycache__/
