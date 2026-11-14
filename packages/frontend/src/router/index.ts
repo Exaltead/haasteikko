@@ -6,6 +6,7 @@ import ItemChallengeView from "@/views/ItemChallengeView.vue"
 import LoginView from "@/views/LoginView.vue"
 import ChallengeManagementView from "@/views/ChallengeManagementView.vue"
 import ChallengeSolutionView from "@/views/ChallengeSolutionView.vue"
+import SolutionExportView from "@/views/SolutionExportView.vue"
 import OverallChallengesView from "@/views/OverallChallengesView.vue"
 import HomeView from "@/views/HomeView.vue"
 import { authGuard } from "@/plugins/AuthService"
@@ -65,6 +66,12 @@ const router = createRouter({
       path: "/challenges/:id",
       name: "challengeSolution",
       component: ChallengeSolutionView,
+      beforeEnter: authGuard,
+    },
+    {
+      path: "/challenges/:id/export",
+      name: "challengeSolutionExport",
+      component: SolutionExportView,
       beforeEnter: authGuard,
     },
   ],

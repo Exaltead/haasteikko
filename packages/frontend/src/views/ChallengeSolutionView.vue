@@ -419,9 +419,14 @@ function resetSolution() {
               <div class="overflow-hidden w-full max-w-[84rem] mx-auto px-2 md:px-0 py-4">
                 <div class="flex items-center justify-between gap-2 px-2 pb-2">
                   <p class="text-xs text-gray-500">✓✓ vapaa · ✓ käytössä muualla · 1/3 = käytössä / sopii</p>
-                  <BrandedButton variant="secondary" icon="Delete" text="Tyhjennä ratkaisu"
-                    :disabled="!hasAnySelection || savingQuestionId !== null"
-                    :onClick="() => showResetConfirm = true" />
+                  <div class="flex gap-2">
+                    <BrandedButton variant="secondary" text="Vie tekstinä"
+                      :disabled="savingQuestionId !== null"
+                      :onClick="() => $router.push({ name: 'challengeSolutionExport', params: { id: route.params.id } })" />
+                    <BrandedButton variant="secondary" icon="Delete" text="Tyhjennä ratkaisu"
+                      :disabled="!hasAnySelection || savingQuestionId !== null"
+                      :onClick="() => showResetConfirm = true" />
+                  </div>
                 </div>
                 <ul class="flex flex-col w-full">
                   <QuestionSolutionItem v-for="{ question, options, status }, i in questionToAnswersMap"

@@ -10,6 +10,18 @@ test("Text question with cluster size 1 can be given a solution", async ({ authe
   const bookName = `Text Book ${Date.now()}`
   const authorName = "Text Author"
 
+  // Record clipboard writes instead of relying on browser clipboard permissions
+  await authenticatedPage.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (text: string) => {
+          ;(window as unknown as { copiedText: string }).copiedText = text
+        },
+      },
+    })
+  })
+
   await authenticatedPage.goto("/")
   await authenticatedPage.getByRole("button", { name: "Kirjaudu sisään" }).click()
   await authenticatedPage.waitForURL("/home")
@@ -58,6 +70,24 @@ test("Text question with cluster size 1 can be given a solution", async ({ authe
   // The picked option shows just the title, and the empty option turns into a clear action
   await expect(picker.locator("option:checked")).toHaveText(bookName)
   await expect(picker.locator("option").first()).toHaveText("— Tyhjennä —")
+
+  // The solution can be exported as editable text and copied to the clipboard
+  await authenticatedPage.getByRole("button", { name: "Vie tekstinä" }).click()
+  await expect(authenticatedPage).toHaveURL(/challenges\/[a-f0-9-]+\/export$/)
+  const exportText = authenticatedPage.getByLabel("Ratkaisu tekstinä")
+  const generated = `${challengeName}\n\n1. ${questionText}\n   ${bookName} – ${authorName}`
+  await expect(exportText).toHaveValue(generated)
+  const edited = `${generated}\n\nOma lisäys`
+  await exportText.fill(edited)
+  await authenticatedPage.getByRole("button", { name: "Kopioi leikepöydälle" }).click()
+  await expect(authenticatedPage.getByRole("button", { name: "Kopioitu!" })).toBeVisible()
+  expect(
+    await authenticatedPage.evaluate(() => (window as unknown as { copiedText: string }).copiedText),
+  ).toBe(edited)
+  await authenticatedPage.getByRole("button", { name: "Palauta" }).click()
+  await expect(exportText).toHaveValue(generated)
+  await authenticatedPage.goBack()
+  await expect(picker.locator("option:checked")).toHaveText(bookName)
 
   // The choice survives a reload and counts as solved
   await authenticatedPage.reload()
